@@ -16,6 +16,7 @@ app.use(cors({
     methods: ["POST", "GET", "OPTIONS"]
 }));
 
+app.use(bodyParser.json());
 
 
 app.get("/",async(req,res)=>{
