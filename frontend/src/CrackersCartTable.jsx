@@ -110,7 +110,7 @@ const CrackersTable = () => {
     const formData = new FormData();
     formData.append("file", blob, "bill.pdf", email);
     formData.append("email", email); 
-    await fetch("http://localhost:3000/send-pdf", {
+    await fetch("https://fireworksserver.vercel.app/api/send-pdf", {
       method: "POST",
       body: formData,
     });
