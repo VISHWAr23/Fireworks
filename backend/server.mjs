@@ -9,11 +9,18 @@ const app = express();
 const upload = multer();
 const PORT = 3000;
 
-app.use(cors({origin: "http://localhost:5173"}));
+// app.use(cors({origin: "http://localhost:5173"}));
 
-app.get('/api', (req, res) => {
-  res.send('Welcome to the PDF Email Service');
-});
+app.use(cors({
+    origin: "http://localhost:5173",
+    methods: ["POST", "GET", "OPTIONS"]
+}));
+
+
+
+app.get("/",async(req,res)=>{
+     res.json("Vanakkam Da Mapla!");
+})
 
 // POST endpoint to receive PDF and email it
 app.post('/api/send-pdf', upload.single('file'), async (req, res) => {
