@@ -23,11 +23,9 @@ app.get("/",async(req,res)=>{
 })
 
 // POST endpoint to receive PDF and email it
-app.post('/api/send-pdf', upload.single('file'), async (req, res) => {
-  console.log('Receiver email:', req.body.email);
-  
+app.post("/api/send-pdf", upload.single('file'), async (req, res) => {
+  // console.log('Receiver email:', req.body.email);
   try {
-    
     if (!req.file) {
       return res.status(400).send('No file uploaded');
     }
