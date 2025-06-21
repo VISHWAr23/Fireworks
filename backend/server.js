@@ -21,9 +21,9 @@ app.use(cors({
 app.use(bodyParser.json());
 
 // Routes
-router.get("/", async (req, res) => {
-  res.json("Vanakkam Da Mapla!");
-});
+app.get("/",async(req,res)=>{
+     res.json("Vankkam Da Mapla! Server is running!");
+})
 
 router.post("/send-pdf", upload.single('file'), async (req, res) => {
   try {
@@ -61,6 +61,7 @@ router.post("/send-pdf", upload.single('file'), async (req, res) => {
 });
 
 app.use("/api", router);
+const PORT = process.env.PORT || 5000;
 
 // Export as serverless function
-export default serverless(app);
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
