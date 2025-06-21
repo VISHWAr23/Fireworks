@@ -11,12 +11,12 @@ const PORT = 3000;
 
 app.use(cors({origin: "http://localhost:5173"}));
 
-app.get('/', (req, res) => {
+app.get('/api', (req, res) => {
   res.send('Welcome to the PDF Email Service');
 });
 
 // POST endpoint to receive PDF and email it
-app.post('/send-pdf', upload.single('file'), async (req, res) => {
+app.post('/api/send-pdf', upload.single('file'), async (req, res) => {
   console.log('Receiver email:', req.body.email);
   
   try {
