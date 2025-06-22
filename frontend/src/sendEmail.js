@@ -1,6 +1,7 @@
 // utils/sendEmail.js
 import emailjs from "emailjs-com";
-
+import dotenv from "dotenv";
+dotenv.config();
 export const sendEmailWithPDF = async (pdfBlob, userEmail, userMessage) => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -16,10 +17,10 @@ export const sendEmailWithPDF = async (pdfBlob, userEmail, userMessage) => {
 
       try {
         const result = await emailjs.send(
-          "service_pmlvljq",     // from EmailJS dashboard
-          "template_wapa9wl",    // email template ID
+          process.env.SERVICE_ID,     // from EmailJS dashboard
+          process.env.TEMPLATE_ID,    // email template ID
           templateParams,
-          "486EpPszhhMyXQMjr"         // public key (EmailJS user ID)
+          process.env.PUBLIC_KEY         // public key (EmailJS user ID)
         );
         resolve(result);
       } catch (error) {
