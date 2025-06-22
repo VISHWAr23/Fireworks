@@ -8,6 +8,7 @@ const CrackersTable = () => {
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [phoneError, setPhoneError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   // Sample data
   const crackersData = [
@@ -120,7 +121,7 @@ const CrackersTable = () => {
 
 
   // Modal submit handler
-  const handleGenerateBill = (e) => {
+  const handleGenerateBill = async (e) => {
     e.preventDefault();
     if (!phone.trim()) {
       setPhoneError("Phone number is required");
@@ -133,9 +134,33 @@ const CrackersTable = () => {
       defaultQuantity: quantities[item.id] || 0,
     }));
 
-    sendPDF(generateBill(selected, phone, email), email);
-    // alert("Bill generated!");
-    setShowModal(false);
+    // Require at least one item selected
+    if (selected.length === 0) {
+      alert("Please select at least one item to generate the bill.");
+      return;
+    }
+
+    // Only send PDF if email is valid (simple regex check)
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      alert("Please enter a valid email address to receive the PDF.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      if (email) {
+        await sendPDF(generateBill(selected, phone, email), email);
+      }
+      // Optionally clear cart and form here
+      // setQuantities({});
+      // setPhone('');
+      // setEmail('');
+      setShowModal(false);
+    } catch (err) {
+      alert("Failed to send PDF. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const SectionHeader = ({ title, discount }) => (
@@ -412,6 +437,7 @@ const CrackersTable = () => {
               <button
                 onClick={() => setShowModal(false)}
                 className="text-gray-300 hover:text-white transition-colors"
+                disabled={loading}
               >
                 <X size={24} />
               </button>
@@ -491,9 +517,10 @@ const CrackersTable = () => {
               <button
                 onClick={handleGenerateBill}
                 className="w-full bg-gradient-to-r from-pink-500 to-red-500 hover:from-pink-600 hover:to-red-600 text-white font-bold py-3 px-4 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 shadow-xl transform hover:scale-105"
+                disabled={loading}
               >
                 <ShoppingCart size={20} />
-                <span>Generate Bill</span>
+                <span>{loading ? "Generating..." : "Generate Bill"}</span>
               </button>
             </div>
           </div>
