@@ -1,77 +1,50 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { ShoppingCart, X, Plus, Minus } from "lucide-react";
-import generateBill from "./generateBill";
 
-const CrackersTable = () => {
+const CrackersCartTable = () => {
   const [quantities, setQuantities] = useState({});
   const [showModal, setShowModal] = useState(false);
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [phoneError, setPhoneError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [products, setProducts] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Sample data
-  const crackersData = [
-    {
-      id: 1,
-      productName: "2 3/4' Kuruvi Crackers",
-      actualPrice: 22.5,
-      discountPrice: 13.5,
-      image: "🎆",
-      description: "1 Pkt",
-    },
-    {
-      id: 2,
-      productName: "2 3/4' Kuruvi Deluxe",
-      actualPrice: 25,
-      discountPrice: 15,
-      image: "🎇",
-      description: "1 Pkt",
-    },
-    {
-      id: 3,
-      productName: "3 1/2' Lakshmi Crackers",
-      actualPrice: 45,
-      discountPrice: 27,
-      image: "🧨",
-      description: "1 Pkt",
-    },
-    {
-      id: 4,
-      productName: "4' Lakshmi Crackers",
-      actualPrice: 57.5,
-      discountPrice: 34.5,
-      image: "🎆",
-      description: "1 Pkt",
-    },
-    {
-      id: 5,
-      productName: "4' Deluxe Lakshmi",
-      actualPrice: 67.5,
-      discountPrice: 40.5,
-      image: "🎇",
-      description: "1 Pkt",
-    },
-  ];
+  // Fetch products from API
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const response = await fetch("http://localhost:3000/products");
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        setProducts(data);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-  const bijliCrackersData = [
-    {
-      id: 6,
-      productName: "Electric Spark Crackers",
-      actualPrice: 35,
-      discountPrice: 21,
-      image: "⚡",
-      description: "1 Pkt",
-    },
-    {
-      id: 7,
-      productName: "Thunder Bolt Special",
-      actualPrice: 55,
-      discountPrice: 33,
-      image: "🌩️",
-      description: "1 Pkt",
-    },
-  ];
+    fetchProducts();
+  }, []);
+
+  // Group products by productType
+  const groupByCategory = (products) => {
+    return products.reduce((acc, product) => {
+      const category = product.productType || 'Uncategorized';
+      if (!acc[category]) {
+        acc[category] = [];
+      }
+      acc[category].push(product);
+      return acc;
+    }, {});
+  };
+
+  const categorizedProducts = groupByCategory(products);
 
   const updateQuantity = (id, change) => {
     setQuantities((prev) => ({
@@ -89,32 +62,18 @@ const CrackersTable = () => {
   };
 
   const calculateGrandTotal = () => {
-    const allData = [...crackersData, ...bijliCrackersData];
-    return allData
+    return products
       .reduce((total, item) => {
-        const quantity = quantities[item.id] || 0;
-        return total + item.discountPrice * quantity;
+        const quantity = quantities[item._id] || 0;
+        return total + (item.discountedPrice || item.actualPrice) * quantity;
       }, 0)
       .toFixed(2);
   };
 
   const getSelectedItems = () => {
-    const allData = [...crackersData, ...bijliCrackersData];
-    return allData.filter((item) => quantities[item.id] > 0);
+    return products.filter((item) => quantities[item._id] > 0);
   };
 
-  async function sendPDF(bill, email) {
-    const blob = bill;
-    const formData = new FormData();
-    formData.append("file", blob, "bill.pdf", email);
-    formData.append("email", email);
-    await fetch("https://fireworksserver.vercel.app/api/send-pdf", {
-      method: "POST",
-      body: formData,
-    });
-  }
-
-  // Modal submit handler
   const handleGenerateBill = async (e) => {
     e.preventDefault();
     if (!phone.trim()) {
@@ -122,11 +81,8 @@ const CrackersTable = () => {
       return;
     }
     setPhoneError("");
-    const selected = getSelectedItems().map((item) => ({
-      ...item,
-      defaultQuantity: quantities[item.id] || 0,
-    }));
-
+    
+    const selected = getSelectedItems();
     if (selected.length === 0) {
       alert("Please select at least one item to generate the bill.");
       return;
@@ -139,35 +95,34 @@ const CrackersTable = () => {
 
     setLoading(true);
     try {
-      if (email) {
-        await sendPDF(generateBill(selected, phone, email), email);
-      }
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      alert(`Bill generated successfully for phone: ${phone}`);
       setShowModal(false);
     } catch (err) {
-      alert("Failed to send PDF. Please try again.");
+      alert("Failed to generate bill. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
-  const SectionHeader = ({ title, discount }) => (
+  const SectionHeader = ({ title }) => (
     <div className="w-full bg-gradient-to-r from-pink-600 via-red-500 to-orange-500 text-white py-4 px-6 mb-2 rounded-lg shadow-lg border border-white/20">
-      <div className="flex justify-between items-center">
-        <h3 className="text-lg font-bold tracking-wide">{title}</h3>
-      </div>
+      <h3 className="text-lg font-bold tracking-wide">{title}</h3>
     </div>
   );
 
-  const ProductRow = ({ item }) => {
-    const quantity = quantities[item.id] || 0;
+  const ProductRow = ({ item, index }) => {
+    const quantity = quantities[item._id] || 0;
     const [inputValue, setInputValue] = useState(quantity.toString());
-    const discount = Math.round(
-      ((item.actualPrice - item.discountPrice) / item.actualPrice) * 100
+    const price = item.discountedPrice || item.actualPrice;
+    const discount = item.discount || Math.round(
+      ((item.actualPrice - price) / item.actualPrice) * 100
     );
 
-    React.useEffect(() => {
-      setInputValue((quantities[item.id] || 0).toString());
-    }, [quantities[item.id]]);
+    useEffect(() => {
+      setInputValue((quantities[item._id] || 0).toString());
+    }, [quantities[item._id]]);
 
     const handleInputChange = (e) => {
       const value = e.target.value;
@@ -180,7 +135,7 @@ const CrackersTable = () => {
       const num = parseInt(inputValue, 10);
       setQuantities((prev) => ({
         ...prev,
-        [item.id]: isNaN(num) ? 0 : num,
+        [item._id]: isNaN(num) ? 0 : num,
       }));
       setInputValue(isNaN(num) ? "0" : num.toString());
     };
@@ -189,7 +144,7 @@ const CrackersTable = () => {
       const num = Math.max(0, (parseInt(inputValue, 10) || 0) - 1);
       setQuantities((prev) => ({
         ...prev,
-        [item.id]: num,
+        [item._id]: num,
       }));
       setInputValue(num.toString());
     };
@@ -198,39 +153,39 @@ const CrackersTable = () => {
       const num = (parseInt(inputValue, 10) || 0) + 1;
       setQuantities((prev) => ({
         ...prev,
-        [item.id]: num,
+        [item._id]: num,
       }));
       setInputValue(num.toString());
     };
 
-    const total = calculateTotal(item.discountPrice, quantities[item.id] || 0);
+    const total = calculateTotal(price, quantity);
 
     return (
       <div className="bg-gradient-to-r from-purple-900/40 via-indigo-900/40 to-blue-900/40 backdrop-blur-sm border border-white/10 rounded-xl mb-3 p-2 hover:shadow-xl transition-all duration-300">
         {/* Desktop View */}
         <div className="hidden md:grid md:grid-cols-7 gap-4 items-center">
           <div className="flex justify-center">
-            <div className="text-4xl bg-gradient-to-br from-yellow-400 to-orange-500 p-3 rounded-full shadow-lg">
-              {item.image}
+            <div className="text-lg font-bold text-white bg-gray-700/50 p-3 rounded-full w-10 h-10 flex items-center justify-center">
+              {index + 1}
             </div>
           </div>
 
           <div className="text-left">
             <div className="text-white font-semibold text-lg">
-              {item.productName}
+              {item.name}
             </div>
-            <div className="text-gray-300 text-sm">{item.description}</div>
+            <div className="text-gray-300 text-sm">{item.productDescription}</div>
           </div>
 
           <div className="text-center">
             <div className="text-red-400 font-semibold line-through text-lg">
-              ₹{item.actualPrice}
+              ₹{item.actualPrice.toFixed(2)}
             </div>
           </div>
 
           <div className="text-center">
             <div className="text-green-400 font-bold text-xl">
-              ₹{item.discountPrice}
+              ₹{price.toFixed(2)}
             </div>
           </div>
 
@@ -270,37 +225,33 @@ const CrackersTable = () => {
           </div>
         </div>
 
-        {/* Mobile View - Table-like layout with Total column */}
+        {/* Mobile View */}
         <div className="md:hidden grid grid-cols-12 gap-1 items-center">
-          {/* Image */}
           <div className="col-span-1 flex justify-center">
-            <div className="text-xl bg-gradient-to-br from-yellow-400 to-orange-500 p-1 rounded-full shadow-lg">
-              {item.image}
+            <div className="text-xs font-bold text-white bg-gray-700/50 p-1 rounded-full w-5 h-5 flex items-center justify-center">
+              {index + 1}
             </div>
           </div>
 
-          {/* Product Name */}
-          <div className="col-span-3 text-left overflow-hidden pl-1">
-            <div className="text-white font-semibold text-xs truncate">
-              {item.productName}
+          <div className="col-span-3 text-left pl-1">
+            <div className="text-white font-semibold text-xs">
+              {item.name}
             </div>
-            <div className="text-gray-300 text-xxs">{item.description}</div>
+            <div className="text-gray-300 text-xxs">{item.productDescription}</div>
           </div>
 
-          {/* Prices */}
           <div className="col-span-2 text-center">
             <div className="text-red-400 font-semibold line-through text-xxs">
-              ₹{item.actualPrice}
+              ₹{item.actualPrice.toFixed(2)}
             </div>
             <div className="text-green-400 font-bold text-xs">
-              ₹{item.discountPrice}
+              ₹{price.toFixed(2)}
             </div>
             <span className="bg-gradient-to-r from-red-500 to-pink-500 text-white px-0.1 py-0.1 rounded-full text-xs font-bold">
               {discount}% OFF
             </span>
           </div>
 
-          {/* Quantity Controls */}
           <div className="col-span-3 flex justify-center items-center space-x-1">
             <button
               onClick={handleDecrement}
@@ -324,7 +275,6 @@ const CrackersTable = () => {
             </button>
           </div>
 
-          {/* Total Price - New column for mobile */}
           <div className="col-span-3 text-center">
             <div className="text-xs font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-pink-400 to-purple-400">
               ₹{total}
@@ -335,23 +285,28 @@ const CrackersTable = () => {
     );
   };
 
-  return (
-    <div
-      className="w-full max-w-7xl mx-auto rounded-2xl shadow-2xl overflow-hidden border border-white/20 relative"
-      style={{
-        background:
-          "linear-gradient(135deg, #1a0a2e 0%, #16213e 25%, #0f3460 50%, #533483 75%, #7209b7 100%)",
-      }}
-    >
-      {/* Header */}
-      <div className="text-center py-8 relative">
-        <p className="text-gray-300 text-lg">Premium Crackers Collection</p>
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
       </div>
+    );
+  }
 
+  if (error) {
+    return (
+      <div className="text-center text-red-500 py-8">
+        Error loading products: {error}
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-full rounded-2xl shadow-2xl overflow-hidden border border-white/20">
       {/* Desktop Table Header */}
       <div className="hidden md:block bg-gradient-to-r from-purple-800/80 via-indigo-800/80 to-blue-800/80 backdrop-blur-sm text-white border-y border-white/20 mx-4 rounded-lg mb-4">
         <div className="grid grid-cols-7 gap-4 px-6 py-4 font-bold text-sm">
-          <div className="text-center">Image</div>
+          <div className="text-center">No.</div>
           <div className="text-left">Product Name</div>
           <div className="text-center">Actual Price</div>
           <div className="text-center">Discount Price</div>
@@ -364,7 +319,7 @@ const CrackersTable = () => {
       {/* Mobile Table Header */}
       <div className="md:hidden bg-gradient-to-r from-purple-800/80 via-indigo-800/80 to-blue-800/80 backdrop-blur-sm text-white border-y border-white/20 mx-2 rounded-lg mb-2 px-1 py-1">
         <div className="grid grid-cols-12 gap-1 text-xxs font-bold">
-          <div className="col-span-1 text-center">Img</div>
+          <div className="col-span-1 text-center">No.</div>
           <div className="col-span-3 text-center">Product</div>
           <div className="col-span-2 text-center">Price</div>
           <div className="col-span-3 text-center">Quantity</div>
@@ -374,21 +329,16 @@ const CrackersTable = () => {
 
       {/* Products */}
       <div className="px-1 md:px-4 pb-6">
-        <SectionHeader title="ONE SOUND CRACKERS" />
-        <div className="space-y-1 md:space-y-3">
-          {crackersData.map((item) => (
-            <ProductRow key={item.id} item={item} />
-          ))}
-        </div>
-
-        <div className="mt-4 md:mt-8">
-          <SectionHeader title="BIJLI CRACKERS" />
-          <div className="space-y-1 md:space-y-3">
-            {bijliCrackersData.map((item) => (
-              <ProductRow key={item.id} item={item} />
-            ))}
-          </div>
-        </div>
+        {Object.entries(categorizedProducts).map(([category, items]) => (
+          <React.Fragment key={category}>
+            <SectionHeader title={category.toUpperCase()} />
+            <div className="space-y-1 md:space-y-3">
+              {items.map((item, index) => (
+                <ProductRow key={item._id} item={item} index={index} />
+              ))}
+            </div>
+          </React.Fragment>
+        ))}
       </div>
 
       {/* Cart Summary */}
@@ -399,7 +349,7 @@ const CrackersTable = () => {
               {getTotalItems()}
             </div>
             <span className="text-white font-semibold text-sm md:text-xl">
-              {getTotalItems()} items
+              {getTotalItems()} {getTotalItems() === 1 ? "item" : "items"}
             </span>
           </div>
 
@@ -415,6 +365,7 @@ const CrackersTable = () => {
           <button
             className="bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 hover:from-pink-600 hover:via-purple-600 hover:to-indigo-600 text-white px-3 py-1.5 md:px-8 md:py-4 rounded-lg md:rounded-xl font-bold text-xs md:text-lg shadow-xl transform hover:scale-105 transition-all duration-300 flex items-center space-x-1 md:space-x-2 border border-white/20"
             onClick={() => setShowModal(true)}
+            disabled={getTotalItems() === 0}
           >
             <ShoppingCart size={14} className="md:w-6 md:h-6" />
             <span>View Cart</span>
@@ -447,15 +398,16 @@ const CrackersTable = () => {
                 </div>
               ) : (
                 getSelectedItems().map((item) => {
-                  const quantity = quantities[item.id] || 0;
-                  const total = calculateTotal(item.discountPrice, quantity);
+                  const quantity = quantities[item._id] || 0;
+                  const price = item.discountedPrice || item.actualPrice;
+                  const total = calculateTotal(price, quantity);
                   return (
                     <div
-                      key={item.id}
+                      key={item._id}
                       className="flex justify-between items-center py-1 md:py-3 border-b border-white/10 text-xs md:text-base"
                     >
                       <div className="text-white font-semibold truncate max-w-[50%]">
-                        {item.productName}{" "}
+                        {item.name}{" "}
                         <span className="text-gray-400 text-xxs md:text-sm">
                           x{quantity}
                         </span>
@@ -474,19 +426,20 @@ const CrackersTable = () => {
               <div className="text-green-400">₹{calculateGrandTotal()}</div>
             </div>
 
-            <div className="space-y-2 md:space-y-4">
+            <form onSubmit={handleGenerateBill} className="space-y-2 md:space-y-4">
               <div>
                 <label className="block text-white text-xxs md:text-sm font-semibold mb-0.5 md:mb-2">
-                  Phone Number
+                  Phone Number <span className="text-red-500">*</span>
                 </label>
                 <input
-                  type="text"
+                  type="tel"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   className={`w-full px-2 py-1 md:px-4 md:py-3 bg-black/20 border rounded-lg focus:outline-none focus:ring-1 md:focus:ring-2 focus:ring-pink-500 transition-all duration-200 text-white placeholder-gray-400 text-xs md:text-base ${
                     phoneError ? "border-red-500" : "border-white/20"
                   }`}
                   placeholder="Enter phone number"
+                  required
                 />
                 {phoneError && (
                   <p className="text-red-400 text-xxs mt-0.5">{phoneError}</p>
@@ -507,14 +460,14 @@ const CrackersTable = () => {
               </div>
 
               <button
-                onClick={handleGenerateBill}
-                className="w-full bg-gradient-to-r from-pink-500 to-red-500 hover:from-pink-600 hover:to-red-600 text-white font-bold py-1.5 md:py-3 px-3 rounded-lg transition-all duration-200 flex items-center justify-center space-x-1 md:space-x-2 shadow-xl text-xs md:text-base"
-                disabled={loading}
+                type="submit"
+                className="w-full bg-gradient-to-r from-pink-500 to-red-500 hover:from-pink-600 hover:to-red-600 text-white font-bold py-1.5 md:py-3 px-3 rounded-lg transition-all duration-200 flex items-center justify-center space-x-1 md:space-x-2 shadow-xl text-xs md:text-base disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={loading || getSelectedItems().length === 0}
               >
                 <ShoppingCart size={12} className="md:w-5 md:h-5" />
                 <span>{loading ? "Generating..." : "Generate Bill"}</span>
               </button>
-            </div>
+            </form>
           </div>
         </div>
       )}
@@ -522,4 +475,4 @@ const CrackersTable = () => {
   );
 };
 
-export default CrackersTable;
+export default CrackersCartTable;
