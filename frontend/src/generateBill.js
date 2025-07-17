@@ -43,10 +43,14 @@ export default async function generateBill(products, phone, email) {
   let sno = 1;
   products.forEach((p) => {
     const productName = p.productName || p.name || "";
-    const qty = p.defaultQuantity ?? p.quantity ?? 0;
+    // Use quantity from cart selection, fallback to 1 if not present
+    const qty = p.defaultQuantity ?? p.quantity ?? p.qty ?? p.selectedQuantity ?? 1;
     const actualPrice = Number(p.actualPrice ?? 0);
     const discount = p.discount ?? 0;
-    const discountPrice = Number(p.discountPrice ?? p.actualPrice ?? 0);
+    // Calculate discountPrice if not present
+    const discountPrice = p.discountPrice !== undefined
+      ? Number(p.discountPrice)
+      : Number((actualPrice * (1 - discount / 100)).toFixed(2));
     const total = discountPrice * qty;
     grandTotal += total;
 
@@ -57,7 +61,7 @@ export default async function generateBill(products, phone, email) {
     doc.text(String(productName), 100, y + 17);
     doc.text(String(qty), 235, y + 17);
     doc.text(actualPrice.toFixed(2) + " INR", 275, y + 17);
-    doc.text(String(discount) + " INR", 345, y + 17);
+    doc.text(String(discount) + " %", 345, y + 17);
     doc.text(discountPrice.toFixed(2), 425, y + 17);
     doc.text(total.toFixed(2) + " INR", 485, y + 17);
 
