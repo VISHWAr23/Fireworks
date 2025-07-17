@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, Search, Filter, X, Save, XCircle, Package } from 'lucide-react';
 
-const API_BASE_URL = 'http://localhost:3000';
+const API_BASE_URL = 'https://firework-backend-d8br.onrender.com/api';
 
 const productTypes = [
   'ONE SOUND CRACKERS',
@@ -345,11 +345,11 @@ const FireworksProductsCRUD = () => {
                   {/* Price */}
                   <div className="flex items-center gap-2 mb-5">
                     <span className="text-xl font-bold text-gray-900">
-                      ${(product.actualPrice * (1 - product.discount / 100)).toFixed(2)}
+                      ₹{(product.actualPrice * (1 - product.discount / 100)).toFixed(2)}
                     </span>
                     {product.discount > 0 && (
                       <span className="text-sm text-gray-500 line-through">
-                        ${product.actualPrice.toFixed(2)}
+                        ₹{product.actualPrice.toFixed(2)}
                       </span>
                     )}
                   </div>
@@ -435,7 +435,7 @@ const FireworksProductsCRUD = () => {
                   {/* Price */}
                   <div>
                     <label htmlFor="actualPrice" className="block text-sm font-medium text-gray-700 mb-2">
-                      Price ($) *
+                      Price (₹) *
                     </label>
                     <input
                       type="number"

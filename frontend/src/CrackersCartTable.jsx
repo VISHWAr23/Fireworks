@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { ShoppingCart, X, Plus, Minus } from "lucide-react";
+import generateBill from '../src/generateBill.js';
 
 const CrackersCartTable = () => {
   const [quantities, setQuantities] = useState({});
@@ -16,7 +17,7 @@ const CrackersCartTable = () => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const response = await fetch("http://localhost:3000/products");
+        const response = await fetch("https://firework-backend-d8br.onrender.com/api/products");
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -95,11 +96,11 @@ const CrackersCartTable = () => {
 
     setLoading(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      await generateBill(getSelectedItems(), phone, email);
       alert(`Bill generated successfully for phone: ${phone}`);
       setShowModal(false);
     } catch (err) {
+      console.error("Bill generation error:", err); // <-- Add this for debugging
       alert("Failed to generate bill. Please try again.");
     } finally {
       setLoading(false);
