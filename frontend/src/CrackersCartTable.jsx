@@ -97,7 +97,7 @@ const CrackersCartTable = () => {
     setLoading(true);
     try {
       await generateBill(getSelectedItems(), phone, email);
-      alert(`Bill generated successfully for phone: ${phone}`);
+      alert(`Bill generated successfully`);
       setShowModal(false);
     } catch (err) {
       console.error("Bill generation error:", err); // <-- Add this for debugging
