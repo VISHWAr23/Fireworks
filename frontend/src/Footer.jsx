@@ -1,4 +1,4 @@
-import { Mail, Phone, MapPin, Clock, Star, Shield, Truck, Award, Facebook, Instagram, Twitter, Youtube } from 'lucide-react';
+import { Mail, Phone, MapPin, Clock, Star, Facebook, Instagram, Twitter, Youtube } from 'lucide-react';
 
 export default function Footer() {
   return (
@@ -12,116 +12,39 @@ export default function Footer() {
       </div>
 
       <div className="relative max-w-7xl mx-auto px-4 md:px-8">
-        {/* Newsletter Section */}
-        <div className="py-12 border-b border-gray-700">
-          <div className="text-center max-w-3xl mx-auto">
-            <h3 className="text-3xl md:text-4xl font-bold mb-4">
-              <span className="bg-gradient-to-r from-red-400 via-yellow-400 to-orange-400 bg-clip-text text-transparent">
-                🎆 Light Up Your Celebrations!
-              </span>
-            </h3>
-            <p className="text-gray-300 text-lg mb-8">
-              Subscribe to get exclusive fireworks deals, safety tips, and early access to festival collections
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
-              <input
-                type="email"
-                placeholder="Enter your email"
-                className="flex-1 px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400/20"
-              />
-              <button className="px-6 py-3 bg-gradient-to-r from-red-500 to-orange-500 text-white font-semibold rounded-lg hover:from-red-600 hover:to-orange-600 transform hover:scale-105 transition-all duration-200">
-                Subscribe
-              </button>
-            </div>
-          </div>
-        </div>
-
         {/* Main Footer Content */}
-        <div className="py-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-          
+        <div className="py-12">
           {/* Company Info */}
-          <div className="lg:col-span-2">
-            <div className="flex items-center mb-6">
+          <div className="text-center lg:text-left mb-12">
+            <div className="flex items-center justify-center lg:justify-start mb-6">
               <div className="w-12 h-12 bg-gradient-to-r from-red-500 to-orange-500 rounded-full flex items-center justify-center mr-4">
                 <Star className="w-6 h-6 text-white" />
               </div>
               <h2 className="text-2xl font-bold text-white">SELVAGANAPATHY TRADERS</h2>
             </div>
-            <p className="text-gray-300 mb-6 leading-relaxed">
-              Your trusted fireworks destination since 1995. We specialize in premium quality fireworks, 
+            <p className="text-gray-300 mb-6 leading-relaxed max-w-3xl mx-auto lg:mx-0">
+              We specialize in premium quality fireworks, 
               crackers, and celebration essentials for all your festive occasions. Licensed dealer with 
               international safety standards.
             </p>
             
             {/* Contact Info */}
-            <div className="space-y-3">
-              <div className="flex items-center text-gray-300">
-                <MapPin className="w-5 h-5 mr-3 text-red-400" />
+            <div className="space-y-3 max-w-2xl mx-auto lg:mx-0">
+              <div className="flex items-center text-gray-300 justify-center lg:justify-start">
+                <MapPin className="w-5 h-5 mr-3 text-red-400 flex-shrink-0" />
                 <span>Main Road, Kananjampatti, Sivakasi-Vembakkottai Road, Tamil Nadu</span>
               </div>
-              <div className="flex items-center text-gray-300">
-                <Phone className="w-5 h-5 mr-3 text-green-400" />
+              <div className="flex items-center text-gray-300 justify-center lg:justify-start">
+                <Phone className="w-5 h-5 mr-3 text-green-400 flex-shrink-0" />
                 <span>+91 98765 43210</span>
               </div>
-              <div className="flex items-center text-gray-300">
-                <Mail className="w-5 h-5 mr-3 text-blue-400" />
+              <div className="flex items-center text-gray-300 justify-center lg:justify-start">
+                <Mail className="w-5 h-5 mr-3 text-blue-400 flex-shrink-0" />
                 <span>info@selvaganapathytraders.com</span>
               </div>
-              <div className="flex items-center text-gray-300">
-                <Clock className="w-5 h-5 mr-3 text-yellow-400" />
+              <div className="flex items-center text-gray-300 justify-center lg:justify-start">
+                <Clock className="w-5 h-5 mr-3 text-yellow-400 flex-shrink-0" />
                 <span>Mon-Sat: 9AM-8PM | Sun: 10AM-6PM</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Quick Links */}
-          <div>
-            <h3 className="text-lg font-semibold text-white mb-6">Quick Links</h3>
-            <ul className="space-y-3">
-              {[
-                'Diwali Collection',
-                'Wedding Fireworks',
-                'Festival Crackers',
-                'Gift Hampers',
-                'Bulk Orders',
-                'Safety Guide',
-                'Track Order',
-                'Customer Reviews'
-              ].map((link, index) => (
-                <li key={index}>
-                  <a href="#" className="text-gray-300 hover:text-yellow-400 transition-colors duration-200 flex items-center">
-                    <span className="w-1.5 h-1.5 bg-red-400 rounded-full mr-2"></span>
-                    {link}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Services & Features */}
-          <div>
-            <h3 className="text-lg font-semibold text-white mb-6">Our Services</h3>
-            <div className="space-y-4">
-              <div className="flex items-start">
-                <Shield className="w-5 h-5 mr-3 text-green-400 mt-0.5" />
-                <div>
-                  <h4 className="text-white font-medium">Safety Certified</h4>
-                  <p className="text-gray-400 text-sm">Licensed & insured dealer</p>
-                </div>
-              </div>
-              <div className="flex items-start">
-                <Truck className="w-5 h-5 mr-3 text-blue-400 mt-0.5" />
-                <div>
-                  <h4 className="text-white font-medium">Fast Delivery</h4>
-                  <p className="text-gray-400 text-sm">Same day local delivery</p>
-                </div>
-              </div>
-              <div className="flex items-start">
-                <Award className="w-5 h-5 mr-3 text-yellow-400 mt-0.5" />
-                <div>
-                  <h4 className="text-white font-medium">Premium Quality</h4>
-                  <p className="text-gray-400 text-sm">Tested & guaranteed products</p>
-                </div>
               </div>
             </div>
           </div>
@@ -129,11 +52,11 @@ export default function Footer() {
 
         {/* Location & Map Section */}
         <div className="py-8 border-t border-gray-700">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
             <div>
               <h3 className="text-xl font-semibold text-white mb-4">Visit Our Store</h3>
               <img
-                className="w-full h-64 object-cover rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300"
+                className="w-full rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300"
                 src="./Location_Pic.jpg"
                 alt="SELVAGANAPATHY TRADERS Store Front"
               />
