@@ -1,18 +1,17 @@
-import { useState } from 'react'
 import './App.css'
 import HomePage from './HomePage.jsx'
 import FireworksProductsCRUD from './FireworksProductsCRUD.jsx'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
 
 function App() {
-  const [count, setCount] = useState(0)
-
-  const isAdmin = window.location.pathname === '/_admin';
-
   return (
-    <>
-      {isAdmin ? <FireworksProductsCRUD /> : <HomePage />}
-    </>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/_admin" element={<FireworksProductsCRUD />} />
+        <Route path="*" element={<HomePage />} />
+      </Routes>
+    </BrowserRouter>
   )
 }
 
-export default App
+export default App;
