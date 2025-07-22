@@ -66,7 +66,7 @@ export default function Footer() {
               <div className="w-full h-64 rounded-lg overflow-hidden shadow-lg">
                 <iframe
                   title="Selvaganapathy Traders Location"
-                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3930.066181047013!2d77.7979787!3d9.4979634!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3b06c6c6e5e0e7b7%3A0x2e2c0e3e4e7e7e7e!2sSelvaganapathy%20Traders!5e0!3m2!1sen!2sin!4v1717171717171!5m2!1sen!2sin"
+                  src="https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d774.0211781897963!2d77.7807148!3d9.3559534!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3b06c900012e23cf%3A0x765074c6264e55cd!2sSELVA%20GANAPATHY%20TRADERS!5e1!3m2!1sen!2sin!4v1753207962124!5m2!1sen!2sin"
                   width="100%"
                   height="100%"
                   style={{ border: 0 }}
@@ -84,33 +84,9 @@ export default function Footer() {
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex flex-col md:flex-row items-center gap-4 text-gray-400 text-sm">
               <p>© 2024 Selvaganapathy Traders. All rights reserved.</p>
-              <div className="flex items-center gap-4">
-                <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
-                <span>|</span>
-                <a href="#" className="hover:text-white transition-colors">Terms of Service</a>
-                <span>|</span>
-                <a href="#" className="hover:text-white transition-colors">Safety Guidelines</a>
-              </div>
+              
             </div>
             
-            {/* Social Media */}
-            <div className="flex items-center gap-4">
-              <span className="text-gray-400 text-sm mr-2">Follow us:</span>
-              {[
-                { Icon: Facebook, color: 'hover:text-blue-400' },
-                { Icon: Instagram, color: 'hover:text-pink-400' },
-                { Icon: Twitter, color: 'hover:text-sky-400' },
-                { Icon: Youtube, color: 'hover:text-red-400' }
-              ].map(({ Icon, color }, index) => (
-                <a
-                  key={index}
-                  href="#"
-                  className={`text-gray-400 ${color} transition-all duration-200 transform hover:scale-110`}
-                >
-                  <Icon className="w-5 h-5" />
-                </a>
-              ))}
-            </div>
           </div>
         </div>
 
@@ -119,7 +95,6 @@ export default function Footer() {
           <div className="bg-gradient-to-r from-red-900/50 to-orange-900/50 border border-red-500/30 rounded-lg p-4 text-center">
             <p className="text-yellow-200 text-sm">
               ⚠️ <strong>Safety First:</strong> Always follow fireworks safety guidelines. Keep water nearby. Adult supervision required. 
-              <a href="#" className="text-yellow-400 hover:text-yellow-300 underline ml-1">Read Safety Guide</a>
             </p>
           </div>
         </div>
