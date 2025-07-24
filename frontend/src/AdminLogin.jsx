@@ -8,7 +8,6 @@ const AdminLogin = ({ onLoginSuccess }) => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-console.log(import.meta.env.VITE_SENDER_EMAIL, import.meta.env.VITE_SERVER_URL);
 
   const email = import.meta.env.VITE_SENDER_EMAIL;
   // Replace with your actual API base URL
