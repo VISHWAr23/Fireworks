@@ -8,11 +8,11 @@ const AdminLogin = ({ onLoginSuccess }) => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-console.log(process.env.SENDER_EMAIL, process.env.SERVER_URL);
+console.log(import.meta.env.VITE_SENDER_EMAIL, import.meta.env.VITE_SERVER_URL);
 
-  const email = process.env.SENDER_EMAIL;
+  const email = import.meta.env.VITE_SENDER_EMAIL;
   // Replace with your actual API base URL
-  const API_BASE_URL = process.env.SERVER_URL; // Adjust according to your NestJS server
+  const API_BASE_URL = import.meta.env.VITE_SERVER_URL; // Adjust according to your NestJS server
   
   const handleSendOtp = async () => {
     setLoading(true);

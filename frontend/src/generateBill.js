@@ -92,7 +92,7 @@ export default async function generateBill(products, phone, email) {
   if (email) formData.append("email", email);
 
   // Send to backend for mailing
-  const response = await fetch(`${process.env.SERVER_URL}/mail/send-pdf`, {
+  const response = await fetch(`${import.meta.env.VITE_SERVER_URL}/mail/send-pdf`, {
     method: "POST",
     body: formData,
   });

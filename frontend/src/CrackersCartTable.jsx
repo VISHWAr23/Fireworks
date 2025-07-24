@@ -17,8 +17,8 @@ const CrackersCartTable = () => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        console.log(process.env.SERVER_URL);
-        const response = await fetch(`${process.env.SERVER_URL}/products`);
+        console.log(import.meta.env.VITE_SERVER_URL);
+        const response = await fetch(`${import.meta.env.VITE_SERVER_URL}/products`);
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
