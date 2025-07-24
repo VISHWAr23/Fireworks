@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, Search, Filter, X, Save, XCircle, Package, LogOut, User } from 'lucide-react';
-
 const API_BASE_URL = process.env.SERVER_URL;
 
 const productTypes = [
