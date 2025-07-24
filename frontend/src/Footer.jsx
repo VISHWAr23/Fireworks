@@ -36,11 +36,11 @@ export default function Footer() {
               </div>
               <div className="flex items-center text-gray-300 justify-center lg:justify-start">
                 <Phone className="w-5 h-5 mr-3 text-green-400 flex-shrink-0" />
-                <span>+91 98765 43210</span>
+                <span>+91 99440 87728</span>
               </div>
               <div className="flex items-center text-gray-300 justify-center lg:justify-start">
                 <Mail className="w-5 h-5 mr-3 text-blue-400 flex-shrink-0" />
-                <span>info@selvaganapathytraders.com</span>
+                <span>selvaganapathytraders.official@gmail.com</span>
               </div>
               <div className="flex items-center text-gray-300 justify-center lg:justify-start">
                 <Clock className="w-5 h-5 mr-3 text-yellow-400 flex-shrink-0" />
