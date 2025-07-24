@@ -8,7 +8,7 @@ export default async function generateBill(products, phone, email) {
   // Fonts and colors
   doc.setFont("helvetica", "bold");
   doc.setFontSize(24);
-  doc.text("Vishwa Fireworks", pageWidth / 2, 60, { align: "center" });
+  doc.text("Selvaganapathy Fireworks", pageWidth / 2, 60, { align: "center" });
   doc.setFontSize(20);
   doc.text("Invoice", pageWidth / 2, 90, { align: "center" });
 
