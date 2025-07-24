@@ -9,10 +9,10 @@ const AdminLogin = ({ onLoginSuccess }) => {
   const [success, setSuccess] = useState('');
 
   // Hardcoded authorized email
-  const email = '2215034@nec.edu.in';
+  const email = processv.env.SENDER_EMAIL;
 
   // Replace with your actual API base URL
-  const API_BASE_URL = 'http://localhost:3000'; // Adjust according to your NestJS server
+  const API_BASE_URL = process.env.SERVER_URL; // Adjust according to your NestJS server
 
   const handleSendOtp = async () => {
     setLoading(true);
