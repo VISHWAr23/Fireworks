@@ -14,27 +14,26 @@ export default function HomePage() {
       }}
     >
       {/* Header with Logo */}
-      <header className="relative z-10 w-full">
-        <div className="container mx-auto px-4 py-6">
-          <div className="flex justify-center items-center">
-            <div className="flex items-center space-x-4">
-              <img 
-                src="./logo.png" 
-                alt="Selvaganapathy Traders Logo" 
-                className="h-16 w-16 object-contain"
-              />
-              <div className="text-center">
-                <h1 className="text-2xl md:text-3xl font-bold text-white tracking-wide">
-                  SELVAGANAPATHY TRADERS
-                </h1>
-                <p className="text-yellow-300 text-sm md:text-base font-medium tracking-wider">
-                  Premium Fireworks & Crackers
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
+      <header className="w-full">
+  <div className="flex justify-center items-center mt-4">
+    <div className="flex items-center gap-1 md:gap-4 mr-0 pr-0">
+      <img 
+        src="./logo.png" 
+        alt="Selvaganapathy Traders Logo" 
+        className="h-14 w-14 object-contain m-0 p-0"
+      />
+      <div className="m-0 p-0 leading-none text-white text-left">
+        <h1 className="text-xl md:text-3xl font-bold tracking-wide">
+          SELVAGANAPATHY TRADERS
+        </h1>
+        <p className="text-yellow-300 text-xs md:text-base font-medium tracking-wider items-center">
+          Premium Fireworks & Crackers
+        </p>
+      </div>
+    </div>
+  </div>
+</header>
+
 
       {/* Fireworks Animation */}
       <div className="absolute inset-0 pointer-events-none">
