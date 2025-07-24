@@ -8,11 +8,12 @@ const AdminLogin = ({ onLoginSuccess }) => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  // Hardcoded authorized email
+console.log(process.env.SENDER_EMAIL, process.env.SERVER_URL);
+
   const email = process.env.SENDER_EMAIL;
   // Replace with your actual API base URL
   const API_BASE_URL = process.env.SERVER_URL; // Adjust according to your NestJS server
-
+  
   const handleSendOtp = async () => {
     setLoading(true);
     setError('');
