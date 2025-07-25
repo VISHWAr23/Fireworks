@@ -1,7 +1,7 @@
 import jsPDF from "jspdf";
 
 export default async function generateBill(products, phone, email) {
-  // 1. Generate PDF as Blob
+  // Generate PDF
   const doc = new jsPDF({ unit: "pt", format: "a4" });
   const pageWidth = doc.internal.pageSize.getWidth();
 
@@ -41,15 +41,16 @@ export default async function generateBill(products, phone, email) {
   let y = tableTop + 25;
   let grandTotal = 0;
   let sno = 1;
+  
   products.forEach((p) => {
     const productName = p.productName || p.name || "";
-    // Use quantity from cart selection, fallback to 1 if not present
-    const qty = p.defaultQuantity ?? p.quantity ?? p.qty ?? p.selectedQuantity ?? 1;
+    // Get quantity from the quantities state that was passed from frontend
+    const qty = p.selectedQuantity || p.quantity || p.qty || p.defaultQuantity || 1;
     const actualPrice = Number(p.actualPrice ?? 0);
-    const discount = p.discount ?? 0;
-    // Calculate discountPrice if not present
-    const discountPrice = p.discountPrice !== undefined
-      ? Number(p.discountPrice)
+    const discount = p.discount ?? Math.round(((actualPrice - (p.discountedPrice || actualPrice)) / actualPrice) * 100) ?? 0;
+    // Use discountedPrice from product data
+    const discountPrice = p.discountedPrice !== undefined
+      ? Number(p.discountedPrice)
       : Number((actualPrice * (1 - discount / 100)).toFixed(2));
     const total = discountPrice * qty;
     grandTotal += total;
@@ -76,30 +77,14 @@ export default async function generateBill(products, phone, email) {
   doc.setFont("helvetica", "bold");
   doc.setFontSize(14);
   doc.setTextColor(0, 0, 0);
-  doc.text(`Grand Total: ${grandTotal.toFixed(2)}  INR`, 380, y + 40, {
+  doc.text(`Grand Total: ${grandTotal.toFixed(2)} INR`, 380, y + 40, {
     align: "left",
   });
 
-  doc.save("bill.pdf");
+  // Save PDF locally (download)
+  doc.save(`bill_${phone}_${Date.now()}.pdf`);
 
-  // Prepare PDF blob for backend
+  // Return PDF blob for email sending
   const pdfBlob = doc.output("blob");
-
-  // Prepare FormData for backend
-  const formData = new FormData();
-  formData.append("bill", pdfBlob, "bill.pdf");
-  formData.append("phone", phone);
-  if (email) formData.append("email", email);
-
-  // Send to backend for mailing
-  const response = await fetch(`${process.env.SERVER_URL}/mail/send-pdf`, {
-    method: "POST",
-    body: formData,
-  });
-
-  if (!response.ok) {
-    throw new Error("Failed to send bill to backend");
-  }
-
-  return await response.json();
+  return pdfBlob;
 }

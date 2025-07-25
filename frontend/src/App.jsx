@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import './App.css'
 import HomePage from './HomePage.jsx'
 import FireworksProductsCRUD from './FireworksProductsCRUD.jsx'
 import AdminLogin from './AdminLogin.jsx'

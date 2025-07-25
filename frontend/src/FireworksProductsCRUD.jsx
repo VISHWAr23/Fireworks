@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, Search, Filter, X, Save, XCircle, Package, LogOut, User } from 'lucide-react';
-const API_BASE_URL = process.env.SERVER_URL;
+const API_BASE_URL = import.meta.env.VITE_SERVER_URL;
+
+
 
 const productTypes = [
   'ONE SOUND CRACKERS',

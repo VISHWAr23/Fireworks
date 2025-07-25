@@ -38,7 +38,7 @@ export default function Footer() {
                 alt="Selvaganapathy Traders Logo"
                 className="h-14 w-14 object-contain m-0 p-0"
               />
-              <h2 className="text-2xl font-bold text-white">
+              <h2 className="text-xl font-bold text-white m-0 p-0">
                 SELVAGANAPATHY TRADERS
               </h2>
             </div>
@@ -59,11 +59,11 @@ export default function Footer() {
               </div>
               <div className="flex items-center text-gray-300 justify-center lg:justify-start">
                 <Phone className="w-5 h-5 mr-3 text-green-400 flex-shrink-0" />
-                <span>+91 98765 43210</span>
+                <span>+91 99440 87728</span>
               </div>
               <div className="flex items-center text-gray-300 justify-center lg:justify-start">
                 <Mail className="w-5 h-5 mr-3 text-blue-400 flex-shrink-0" />
-                <span>info@selvaganapathytraders.com</span>
+                <span>selvaganapathytraders.official@gmail.com</span>
               </div>
               <div className="flex items-center text-gray-300 justify-center lg:justify-start">
                 <Clock className="w-5 h-5 mr-3 text-yellow-400 flex-shrink-0" />

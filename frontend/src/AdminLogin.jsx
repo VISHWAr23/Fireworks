@@ -8,11 +8,11 @@ const AdminLogin = ({ onLoginSuccess }) => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  // Hardcoded authorized email
-  const email = process.env.SENDER_EMAIL;
-  // Replace with your actual API base URL
-  const API_BASE_URL = process.env.SERVER_URL; // Adjust according to your NestJS server
 
+  const email = import.meta.env.VITE_SENDER_EMAIL;
+  // Replace with your actual API base URL
+  const API_BASE_URL = import.meta.env.VITE_SERVER_URL; // Adjust according to your NestJS server
+  
   const handleSendOtp = async () => {
     setLoading(true);
     setError('');
@@ -118,9 +118,9 @@ const AdminLogin = ({ onLoginSuccess }) => {
                   </svg>
                   <span className="text-sm font-medium text-gray-700">Authorized Email:</span>
                 </div>
-                <p className="text-center font-mono text-blue-700 font-semibold mt-2 bg-white px-3 py-2 rounded border">
-                  {email}
-                </p>
+                <p className="text-center font-mono text-blue-700 font-semibold bg-white px-3 py-2 rounded border break-all">
+    {email}
+  </p>
               </div>
 
               {/* Security Notice */}
