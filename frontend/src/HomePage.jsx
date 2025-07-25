@@ -1,9 +1,77 @@
-import React from "react";
+import React, { useState } from "react";
 import CrackersCartTable from "./CrackersCartTable.jsx";
 import Footer from "./Footer.jsx";
 
 export default function HomePage() {
   const year = new Date().getFullYear().toString();
+  const [isPressed, setIsPressed] = useState(false);
+
+  // Logo interaction handlers
+  const handleLogoInteraction = () => {
+    const isMobile = window.innerWidth <= 768;
+    let pressTimer;
+    let clickCount = 0;
+
+    const mobileHandlers = {
+      onTouchStart: (e) => {
+        e.preventDefault();
+        setIsPressed(true);
+        pressTimer = setTimeout(() => {
+          window.location.href = '/_admin';
+        }, 800); // 800ms for long press
+      },
+      
+      onTouchEnd: (e) => {
+        e.preventDefault();
+        setIsPressed(false);
+        clearTimeout(pressTimer);
+      },
+
+      onTouchCancel: (e) => {
+        e.preventDefault();
+        setIsPressed(false);
+        clearTimeout(pressTimer);
+      }
+    };
+
+    const desktopHandlers = {
+      onClick: (e) => {
+        e.preventDefault();
+        clickCount++;
+        if (clickCount === 1) {
+          setTimeout(() => {
+            if (clickCount === 2) {
+              window.location.href = '/_admin';
+            }
+            clickCount = 0;
+          }, 300); // 300ms window for double click
+        }
+      }
+    };
+
+    return isMobile ? mobileHandlers : desktopHandlers;
+  };
+
+  // Logo Component with interaction handlers
+  const InteractiveLogo = () => {
+    return (
+      <div 
+        className={`cursor-pointer transition-all duration-200 select-none ${
+          isPressed ? 'scale-95 opacity-80' : 'hover:scale-105'
+        }`}
+        {...handleLogoInteraction()}
+      >
+        <img 
+          src="./logo.png" 
+          alt="Selvaganapathy Traders Logo" 
+          className={`h-14 w-14 object-contain m-0 p-0 transition-all duration-200 ${
+            isPressed ? 'brightness-75' : ''
+          }`}
+          draggable={false}
+        />
+      </div>
+    );
+  };
 
   return (
     <div
@@ -13,27 +81,22 @@ export default function HomePage() {
           "linear-gradient(135deg, #1a0a2e 0%, #16213e 25%, #0f3460 50%, #533483 75%, #7209b7 100%)",
       }}
     >
-      {/* Header with Logo */}
+      {/* Header with Interactive Logo */}
       <header className="w-full">
-  <div className="flex justify-center items-center mt-4">
-    <div className="flex items-center gap-1 md:gap-4 mr-0 pr-0">
-      <img 
-        src="./logo.png" 
-        alt="Selvaganapathy Traders Logo" 
-        className="h-14 w-14 object-contain m-0 p-0"
-      />
-      <div className="m-0 p-0 leading-none text-white text-left">
-        <h1 className="text-xl md:text-3xl font-bold tracking-wide">
-          SELVAGANAPATHY TRADERS
-        </h1>
-        <p className="text-yellow-300 text-xs md:text-base font-medium tracking-wider items-center">
-          Premium Fireworks & Crackers
-        </p>
-      </div>
-    </div>
-  </div>
-</header>
-
+        <div className="flex justify-center items-center mt-4">
+          <div className="flex items-center gap-1 md:gap-4 mr-0 pr-0">
+            <InteractiveLogo />
+            <div className="m-0 p-0 leading-none text-white text-left">
+              <h1 className="text-xl md:text-3xl font-bold tracking-wide">
+                SELVAGANAPATHY TRADERS
+              </h1>
+              <p className="text-yellow-300 text-xs md:text-base font-medium tracking-wider items-center">
+                Premium Fireworks & Crackers
+              </p>
+            </div>
+          </div>
+        </div>
+      </header>
 
       {/* Fireworks Animation */}
       <div className="absolute inset-0 pointer-events-none">

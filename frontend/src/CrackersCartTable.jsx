@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { ShoppingCart, X, Plus, Minus } from "lucide-react";
-import generateBill from '../src/generateBill.js';
+import { ShoppingCart, X, Plus, Minus, ShoppingBag } from "lucide-react";
+import generateBill from "../src/generateBill.js";
 
 const CrackersCartTable = () => {
   const [quantities, setQuantities] = useState({});
   const [showModal, setShowModal] = useState(false);
+  const [showEmptyCartModal, setShowEmptyCartModal] = useState(false);
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [phoneError, setPhoneError] = useState("");
@@ -17,7 +18,9 @@ const CrackersCartTable = () => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const response = await fetch(`${import.meta.env.VITE_SERVER_URL}/products`);
+        const response = await fetch(
+          `${import.meta.env.VITE_SERVER_URL}/products`
+        );
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -36,7 +39,7 @@ const CrackersCartTable = () => {
   // Group products by productType
   const groupByCategory = (products) => {
     return products.reduce((acc, product) => {
-      const category = product.productType || 'Uncategorized';
+      const category = product.productType || "Uncategorized";
       if (!acc[category]) {
         acc[category] = [];
       }
@@ -75,6 +78,16 @@ const CrackersCartTable = () => {
     return products.filter((item) => quantities[item._id] > 0);
   };
 
+  // Handle View Cart button click with modal notification
+  const handleViewCartClick = () => {
+    if (getTotalItems() === 0) {
+      setShowEmptyCartModal(true);
+      return;
+    }
+    setShowModal(true);
+  };
+
+  // Updated handleGenerateBill function with proper mail integration
   const handleGenerateBill = async (e) => {
     e.preventDefault();
     if (!phone.trim()) {
@@ -82,7 +95,7 @@ const CrackersCartTable = () => {
       return;
     }
     setPhoneError("");
-    
+
     const selected = getSelectedItems();
     if (selected.length === 0) {
       alert("Please select at least one item to generate the bill.");
@@ -96,11 +109,54 @@ const CrackersCartTable = () => {
 
     setLoading(true);
     try {
-      await generateBill(getSelectedItems(), phone, email);
-      alert(`Bill generated successfully`);
+      // Prepare products with quantities for PDF generation
+      const productsWithQuantities = selected.map((product) => ({
+        ...product,
+        selectedQuantity: quantities[product._id] || 0,
+      }));
+
+      // Generate the bill and get the PDF blob
+      const pdfBlob = await generateBill(productsWithQuantities, phone, email);
+
+      // If email is provided, send the PDF via email
+      if (email && pdfBlob) {
+        try {
+          const formData = new FormData();
+          formData.append("file", pdfBlob, `bill_${phone}_${Date.now()}.pdf`);
+          formData.append("email", email);
+
+          const emailResponse = await fetch(
+            `${import.meta.env.VITE_SERVER_URL}/mail/send-pdf`,
+            {
+              method: "POST",
+              body: formData,
+            }
+          );
+
+          if (!emailResponse.ok) {
+            const errorData = await emailResponse.json();
+            throw new Error(errorData.message || "Failed to send email");
+          }
+
+          const emailResult = await emailResponse.json();
+          console.log("Email sent successfully:", emailResult);
+          alert("Bill generated successfully and sent to your email!");
+        } catch (emailError) {
+          console.error("Email sending error:", emailError);
+          alert(
+            "Bill generated successfully and downloaded, but failed to send email. Please check your email address."
+          );
+        }
+      } else {
+        alert("Bill generated and downloaded successfully!");
+      }
+
       setShowModal(false);
+      // Reset form
+      setPhone("");
+      setEmail("");
     } catch (err) {
-      console.error("Bill generation error:", err); // <-- Add this for debugging
+      console.error("Bill generation error:", err);
       alert("Failed to generate bill. Please try again.");
     } finally {
       setLoading(false);
@@ -117,9 +173,9 @@ const CrackersCartTable = () => {
     const quantity = quantities[item._id] || 0;
     const [inputValue, setInputValue] = useState(quantity.toString());
     const price = item.discountedPrice || item.actualPrice;
-    const discount = item.discount || Math.round(
-      ((item.actualPrice - price) / item.actualPrice) * 100
-    );
+    const discount =
+      item.discount ||
+      Math.round(((item.actualPrice - price) / item.actualPrice) * 100);
 
     useEffect(() => {
       setInputValue((quantities[item._id] || 0).toString());
@@ -172,10 +228,10 @@ const CrackersCartTable = () => {
           </div>
 
           <div className="text-left">
-            <div className="text-white font-semibold text-lg">
-              {item.name}
+            <div className="text-white font-semibold text-lg">{item.name}</div>
+            <div className="text-gray-300 text-sm">
+              {item.productDescription}
             </div>
-            <div className="text-gray-300 text-sm">{item.productDescription}</div>
           </div>
 
           <div className="text-center">
@@ -226,59 +282,72 @@ const CrackersCartTable = () => {
           </div>
         </div>
 
-        {/* Mobile View */}
-        <div className="md:hidden grid grid-cols-12 gap-1 items-center">
-          <div className="col-span-1 flex justify-center">
-            <div className="text-xs font-bold text-white bg-gray-700/50 p-1 rounded-full w-5 h-5 flex items-center justify-center">
-              {index + 1}
+        {/* Mobile View - Improved Alignment */}
+        <div className="md:hidden">
+          <div className="grid grid-cols-12 gap-2 items-center px-1">
+            {/* Number */}
+            <div className="col-span-1 flex justify-center">
+              <div className="text-xs font-bold text-white bg-gray-700/50 p-1.5 rounded-full w-6 h-6 flex items-center justify-center">
+                {index + 1}
+              </div>
             </div>
-          </div>
 
-          <div className="col-span-3 text-left pl-1">
-            <div className="text-white font-semibold text-xs">
-              {item.name}
+            {/* Product Info */}
+            <div className="col-span-4 text-left pl-1">
+              <div className="text-white font-semibold text-sm leading-tight">
+                {item.name}
+              </div>
+              <div className="text-gray-300 text-xs leading-tight mt-0.5 line-clamp-2">
+                {item.productDescription}
+              </div>
             </div>
-            <div className="text-gray-300 text-xxs">{item.productDescription}</div>
-          </div>
 
-          <div className="col-span-2 text-center">
-            <div className="text-red-400 font-semibold line-through text-xxs">
-              ₹{item.actualPrice.toFixed(2)}
+            {/* Price and Discount */}
+            <div className="col-span-3 text-center">
+              <div className="flex flex-col items-center space-y-0.5">
+                <div className="text-red-400 font-semibold line-through text-xs">
+                  ₹{item.actualPrice.toFixed(2)}
+                </div>
+                <div className="text-green-400 font-bold text-sm">
+                  ₹{price.toFixed(2)}
+                </div>
+                <span className="bg-gradient-to-r from-red-500 to-pink-500 text-white px-1.5 py-0.5 rounded-full text-xs font-bold">
+                  {discount}% OFF
+                </span>
+              </div>
             </div>
-            <div className="text-green-400 font-bold text-xs">
-              ₹{price.toFixed(2)}
+
+            {/* Quantity Controls */}
+            <div className="col-span-2 flex justify-center items-center">
+              <div className="flex flex-col items-center space-y-1">
+                <button
+                  onClick={handleIncrement}
+                  className="bg-gradient-to-r from-green-500 to-emerald-500 text-white w-6 h-6 rounded-full flex items-center justify-center font-bold shadow-lg text-xs"
+                >
+                  <Plus size={12} />
+                </button>
+                <input
+                  type="text"
+                  value={inputValue}
+                  onChange={handleInputChange}
+                  onBlur={handleInputBlur}
+                  className="bg-gray-800/70 text-white px-1 py-0.5 rounded-lg font-bold w-8 text-center border border-white/20 focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500 text-xs"
+                  placeholder="0"
+                />
+                <button
+                  onClick={handleDecrement}
+                  className="bg-gradient-to-r from-pink-500 to-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center font-bold shadow-lg text-xs"
+                >
+                  <Minus size={12} />
+                </button>
+              </div>
             </div>
-            <span className="bg-gradient-to-r from-red-500 to-pink-500 text-white px-0.1 py-0.1 rounded-full text-xs font-bold">
-              {discount}% OFF
-            </span>
-          </div>
 
-          <div className="col-span-3 flex justify-center items-center space-x-1">
-            <button
-              onClick={handleDecrement}
-              className="bg-gradient-to-r from-pink-500 to-red-500 text-white w-5 h-5 rounded-full flex items-center justify-center font-bold shadow-lg text-xxs"
-            >
-              <Minus size={10} />
-            </button>
-            <input
-              type="text"
-              value={inputValue}
-              onChange={handleInputChange}
-              onBlur={handleInputBlur}
-              className="bg-gray-800/70 text-white px-1 py-0.5 rounded-lg font-bold w-6 text-center border border-white/20 focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500 text-xxs"
-              placeholder="0"
-            />
-            <button
-              onClick={handleIncrement}
-              className="bg-gradient-to-r from-green-500 to-emerald-500 text-white w-5 h-5 rounded-full flex items-center justify-center font-bold shadow-lg text-xxs"
-            >
-              <Plus size={10} />
-            </button>
-          </div>
-
-          <div className="col-span-3 text-center">
-            <div className="text-xs font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-pink-400 to-purple-400">
-              ₹{total}
+            {/* Total */}
+            <div className="col-span-2 text-center">
+              <div className="text-sm font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-pink-400 to-purple-400">
+                ₹{total}
+              </div>
             </div>
           </div>
         </div>
@@ -317,14 +386,14 @@ const CrackersCartTable = () => {
         </div>
       </div>
 
-      {/* Mobile Table Header */}
-      <div className="md:hidden bg-gradient-to-r from-purple-800/80 via-indigo-800/80 to-blue-800/80 backdrop-blur-sm text-white border-y border-white/20 mx-2 rounded-lg mb-2 px-1 py-1">
-        <div className="grid grid-cols-12 gap-1 text-xxs font-bold">
+      {/* Mobile Table Header - Improved */}
+      <div className="md:hidden bg-gradient-to-r from-purple-800/80 via-indigo-800/80 to-blue-800/80 backdrop-blur-sm text-white border-y border-white/20 mx-2 rounded-lg mb-2">
+        <div className="grid grid-cols-12 gap-2 px-2 py-2 text-xs font-bold">
           <div className="col-span-1 text-center">No.</div>
-          <div className="col-span-3 text-center">Product</div>
-          <div className="col-span-2 text-center">Price</div>
-          <div className="col-span-3 text-center">Quantity</div>
-          <div className="col-span-3 text-center">Total</div>
+          <div className="col-span-4 text-left pl-1">Product</div>
+          <div className="col-span-3 text-center">Price</div>
+          <div className="col-span-2 text-center">Qty</div>
+          <div className="col-span-2 text-center">Total</div>
         </div>
       </div>
 
@@ -344,131 +413,189 @@ const CrackersCartTable = () => {
 
       {/* Cart Summary */}
       <div className="bg-gradient-to-r from-purple-800/50 via-indigo-800/50 to-blue-800/50 backdrop-blur-sm border-t-2 border-white/20">
-        <div className="flex flex-col md:flex-row justify-between items-center px-2 md:px-6 py-3 md:py-6 space-y-2 md:space-y-0">
-          <div className="flex items-center space-x-2 md:space-x-3">
-            <div className="bg-gradient-to-r from-pink-500 to-red-500 text-white rounded-full w-6 h-6 md:w-12 md:h-12 flex items-center justify-center font-bold text-xs md:text-lg shadow-lg">
+        <div className="flex flex-col md:flex-row justify-between items-center px-4 md:px-6 py-4 md:py-6 space-y-3 md:space-y-0">
+          <div className="flex items-center space-x-3">
+            <div className="bg-gradient-to-r from-pink-500 to-red-500 text-white rounded-full w-8 h-8 md:w-12 md:h-12 flex items-center justify-center font-bold text-sm md:text-lg shadow-lg">
               {getTotalItems()}
             </div>
-            <span className="text-white font-semibold text-sm md:text-xl">
+            <span className="text-white font-semibold text-base md:text-xl">
               {getTotalItems()} {getTotalItems() === 1 ? "item" : "items"}
             </span>
           </div>
 
-          <div className="text-center md:text-right">
-            <div className="text-xl md:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-pink-400 to-purple-400">
+          <div className="text-center">
+            <div className="text-2xl md:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-pink-400 to-purple-400">
               ₹ {calculateGrandTotal()}
             </div>
-            <div className="text-xxs md:text-sm text-gray-300">
-              Total Amount
-            </div>
+            <div className="text-sm text-gray-300">Total Amount</div>
           </div>
 
           <button
-            className="bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 hover:from-pink-600 hover:via-purple-600 hover:to-indigo-600 text-white px-3 py-1.5 md:px-8 md:py-4 rounded-lg md:rounded-xl font-bold text-xs md:text-lg shadow-xl transform hover:scale-105 transition-all duration-300 flex items-center space-x-1 md:space-x-2 border border-white/20"
-            onClick={() => setShowModal(true)}
-            disabled={getTotalItems() === 0}
+            className="bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 hover:from-pink-600 hover:via-purple-600 hover:to-indigo-600 text-white px-6 py-3 md:px-8 md:py-4 rounded-lg md:rounded-xl font-bold text-sm md:text-lg shadow-xl transform hover:scale-105 transition-all duration-300 flex items-center space-x-2 border border-white/20"
+            onClick={handleViewCartClick}
           >
-            <ShoppingCart size={14} className="md:w-6 md:h-6" />
+            <ShoppingCart size={16} className="md:w-6 md:h-6" />
             <span>View Cart</span>
           </button>
         </div>
       </div>
 
-      {/* Modal for Bill Generation */}
+      {/* Empty Cart Modal - NEW */}
+      {showEmptyCartModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="bg-gradient-to-br from-red-900/90 to-pink-900/90 rounded-2xl shadow-2xl w-full max-w-md border border-red-500/30 relative overflow-hidden">
+            {/* Animated background effect */}
+            <div className="absolute inset-0 bg-gradient-to-br from-red-600/20 via-pink-600/20 to-purple-600/20 animate-pulse"></div>
+
+            {/* Content */}
+            <div className="relative z-10 p-6 text-center">
+              {/* Close button */}
+              <button
+                onClick={() => setShowEmptyCartModal(false)}
+                className="absolute top-4 right-4 text-gray-300 hover:text-white transition-colors p-1 rounded-full hover:bg-white/10"
+              >
+                <X size={20} />
+              </button>
+
+              {/* Icon */}
+              <div className="mb-4 flex justify-center">
+                <div className="bg-gradient-to-br from-red-500 to-pink-500 rounded-full p-4 shadow-lg">
+                  <ShoppingBag size={40} className="text-white" />
+                </div>
+              </div>
+
+              {/* Title */}
+              <h2 className="text-2xl font-bold text-white mb-3">
+                Your Cart is Empty
+              </h2>
+
+              {/* Message */}
+              <p className="text-gray-200 mb-6 leading-relaxed">
+                Please select at least one product to view your cart and proceed
+                with the purchase.
+              </p>
+
+              {/* Action Button */}
+              <button
+                onClick={() => setShowEmptyCartModal(false)}
+                className="bg-gradient-to-r from-pink-500 via-red-500 to-orange-500 hover:from-pink-600 hover:via-red-600 hover:to-orange-600 text-white px-8 py-3 rounded-xl font-bold text-lg shadow-xl transform hover:scale-105 transition-all duration-300 border border-white/20"
+              >
+                Continue Shopping
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bill Generation Modal */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
-          <div className="bg-gradient-to-br from-purple-900 to-indigo-900 rounded-lg md:rounded-2xl shadow-2xl w-full max-w-md mx-2 md:mx-auto p-3 md:p-6 border border-white/20">
-            <div className="flex justify-end">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="bg-gradient-to-br from-purple-900 to-indigo-900 rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-hidden border border-white/20 relative">
+            {/* Header */}
+            <div className="flex justify-between items-center p-4 md:p-6 border-b border-white/20">
+              <h2 className="text-xl md:text-2xl font-bold text-white">
+                Generate Bill
+              </h2>
               <button
                 onClick={() => setShowModal(false)}
-                className="text-gray-300 hover:text-white transition-colors"
+                className="text-gray-300 hover:text-white transition-colors p-1"
                 disabled={loading}
               >
-                <X size={18} className="md:w-6 md:h-6" />
+                <X size={20} />
               </button>
             </div>
 
-            <h2 className="text-lg md:text-2xl font-bold text-center text-white mb-3 md:mb-6">
-              Generate Bill
-            </h2>
-
-            <div className="max-h-60 overflow-y-auto mb-2 md:mb-4 bg-black/20 rounded-lg p-1 md:p-4">
-              {getSelectedItems().length === 0 ? (
-                <div className="text-center text-gray-400 py-4">
-                  No items selected
-                </div>
-              ) : (
-                getSelectedItems().map((item) => {
-                  const quantity = quantities[item._id] || 0;
-                  const price = item.discountedPrice || item.actualPrice;
-                  const total = calculateTotal(price, quantity);
-                  return (
-                    <div
-                      key={item._id}
-                      className="flex justify-between items-center py-1 md:py-3 border-b border-white/10 text-xs md:text-base"
-                    >
-                      <div className="text-white font-semibold truncate max-w-[50%]">
-                        {item.name}{" "}
-                        <span className="text-gray-400 text-xxs md:text-sm">
-                          x{quantity}
-                        </span>
-                      </div>
-                      <div className="text-green-400 font-bold text-xs md:text-base">
-                        ₹{total}
-                      </div>
+            {/* Content */}
+            <div className="p-4 md:p-6 overflow-y-auto max-h-[calc(90vh-200px)]">
+              {/* Selected Items */}
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold text-white mb-3">
+                  Selected Items
+                </h3>
+                <div className="max-h-48 overflow-y-auto bg-black/20 rounded-lg p-3">
+                  {getSelectedItems().length === 0 ? (
+                    <div className="text-center text-gray-400 py-4">
+                      No items selected
                     </div>
-                  );
-                })
-              )}
-            </div>
-
-            <div className="flex justify-between items-center py-1 md:py-3 font-bold text-base md:text-xl border-t border-white/20 mb-3 md:mb-6">
-              <div className="text-white">Total Amount</div>
-              <div className="text-green-400">₹{calculateGrandTotal()}</div>
-            </div>
-
-            <form onSubmit={handleGenerateBill} className="space-y-2 md:space-y-4">
-              <div>
-                <label className="block text-white text-xxs md:text-sm font-semibold mb-0.5 md:mb-2">
-                  Phone Number <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="tel"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  className={`w-full px-2 py-1 md:px-4 md:py-3 bg-black/20 border rounded-lg focus:outline-none focus:ring-1 md:focus:ring-2 focus:ring-pink-500 transition-all duration-200 text-white placeholder-gray-400 text-xs md:text-base ${
-                    phoneError ? "border-red-500" : "border-white/20"
-                  }`}
-                  placeholder="Enter phone number"
-                  required
-                />
-                {phoneError && (
-                  <p className="text-red-400 text-xxs mt-0.5">{phoneError}</p>
-                )}
+                  ) : (
+                    getSelectedItems().map((item) => {
+                      const quantity = quantities[item._id] || 0;
+                      const price = item.discountedPrice || item.actualPrice;
+                      const total = calculateTotal(price, quantity);
+                      return (
+                        <div
+                          key={item._id}
+                          className="flex justify-between items-center py-2 border-b border-white/10 last:border-b-0"
+                        >
+                          <div className="text-white font-semibold flex-1 pr-2">
+                            <div className="text-sm">{item.name}</div>
+                            <div className="text-xs text-gray-400">
+                              ₹{price.toFixed(2)} x {quantity}
+                            </div>
+                          </div>
+                          <div className="text-green-400 font-bold text-sm">
+                            ₹{total}
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
               </div>
 
-              <div>
-                <label className="block text-white text-xxs md:text-sm font-semibold mb-0.5 md:mb-2">
-                  Email (optional)
-                </label>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-2 py-1 md:px-4 md:py-3 bg-black/20 border border-white/20 rounded-lg focus:outline-none focus:ring-1 md:focus:ring-2 focus:ring-pink-500 transition-all duration-200 text-white placeholder-gray-400 text-xs md:text-base"
-                  placeholder="Enter email address"
-                />
+              {/* Total */}
+              <div className="flex justify-between items-center py-3 font-bold text-lg border-t border-white/20 mb-6">
+                <div className="text-white">Total Amount</div>
+                <div className="text-green-400">₹{calculateGrandTotal()}</div>
               </div>
 
-              <button
-                type="submit"
-                className="w-full bg-gradient-to-r from-pink-500 to-red-500 hover:from-pink-600 hover:to-red-600 text-white font-bold py-1.5 md:py-3 px-3 rounded-lg transition-all duration-200 flex items-center justify-center space-x-1 md:space-x-2 shadow-xl text-xs md:text-base disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={loading || getSelectedItems().length === 0}
-              >
-                <ShoppingCart size={12} className="md:w-5 md:h-5" />
-                <span>{loading ? "Generating..." : "Generate Bill"}</span>
-              </button>
-            </form>
+              {/* Form */}
+              <form onSubmit={handleGenerateBill} className="space-y-4">
+                <div>
+                  <label className="block text-white text-sm font-semibold mb-2">
+                    Phone Number <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    className={`w-full px-4 py-3 bg-black/20 border rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500 transition-all duration-200 text-white placeholder-gray-400 ${
+                      phoneError ? "border-red-500" : "border-white/20"
+                    }`}
+                    placeholder="Enter phone number"
+                    required
+                  />
+                  {phoneError && (
+                    <p className="text-red-400 text-xs mt-1">{phoneError}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-white text-sm font-semibold mb-2">
+                    Email (optional - to receive PDF)
+                  </label>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full px-4 py-3 bg-black/20 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500 transition-all duration-200 text-white placeholder-gray-400"
+                    placeholder="Enter email address to receive PDF"
+                  />
+                  <p className="text-gray-400 text-xs mt-1">
+                    If provided, the bill PDF will be sent to your email
+                  </p>
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full bg-gradient-to-r from-pink-500 to-red-500 hover:from-pink-600 hover:to-red-600 text-white font-bold py-3 px-4 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 shadow-xl disabled:opacity-50 disabled:cursor-not-allowed mt-6"
+                  disabled={loading || getSelectedItems().length === 0}
+                >
+                  <ShoppingCart size={18} />
+                  <span>{loading ? "Generating..." : "Generate Bill"}</span>
+                </button>
+              </form>
+            </div>
           </div>
         </div>
       )}

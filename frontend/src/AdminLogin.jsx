@@ -118,9 +118,9 @@ const AdminLogin = ({ onLoginSuccess }) => {
                   </svg>
                   <span className="text-sm font-medium text-gray-700">Authorized Email:</span>
                 </div>
-                <p className="text-center font-mono text-blue-700 font-semibold mt-2 bg-white px-3 py-2 rounded border">
-                  {email}
-                </p>
+                <p className="text-center font-mono text-blue-700 font-semibold bg-white px-3 py-2 rounded border break-all">
+    {email}
+  </p>
               </div>
 
               {/* Security Notice */}
