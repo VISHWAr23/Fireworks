@@ -61,7 +61,7 @@ export default async function generateBill(products, phone, email) {
     // Check if next line will overflow page
     if (y + lineHeight > pageHeight - 100) {
       doc.addPage();
-      y = addHeader(marginTop);
+      // y = addHeader(marginTop);
     }
 
     doc.setFont("helvetica", "normal");
