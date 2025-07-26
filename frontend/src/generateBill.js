@@ -1,53 +1,35 @@
 import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
+/**
+ * Generates a professional invoice-style bill (MNC-like) using jsPDF + autotable.
+ * - Neat table layout with borders, proper wrapping, and no overlaps.
+ * - Company info, customer contact, and a clean total section.
+ */
 export default async function generateBill(products, phone, email) {
   const doc = new jsPDF({ unit: "pt", format: "a4" });
-  const pageWidth = doc.internal.pageSize.getWidth();
-  const pageHeight = doc.internal.pageSize.getHeight();
-  const marginTop = 60;
-  const lineHeight = 25;
 
-  // Function to add header and table headers
-  function addHeader(yOffset) {
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(24);
-    doc.text("Selvaganapathy Fireworks", pageWidth / 2, yOffset, { align: "center" });
-    doc.setFontSize(20);
-    doc.text("Invoice", pageWidth / 2, yOffset + 30, { align: "center" });
+  // COMPANY HEADER
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(22);
+  doc.text("Selvaganapathy Fireworks", 55, 50);
+  doc.setFontSize(12);
+  doc.setFont("helvetica", "normal");
+  doc.text("1234 Example Street, City, State, 600001", 55, 75); // Replace with your address
+  doc.text("GSTIN: 12ABCDE3456FZ1W", 55, 95); // Placeholder for GSTIN/tax info
 
-    doc.setFontSize(12);
-    doc.setFont("helvetica", "normal");
-    doc.text(`Phone: ${phone}`, 55, yOffset + 60);
-    if (email) doc.text(`Email: ${email}`, 55, yOffset + 80);
+  // INVOICE INFO (on right)
+  doc.setFont("helvetica", "bold");
+  doc.text("INVOICE", 470, 50);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(11);
+  const today = new Date();
+  doc.text(`Date: ${today.toLocaleDateString()}`, 470, 75);
+  doc.text(`Phone: ${phone}`, 470, 95);
+  if (email) doc.text(`Email: ${email}`, 470, 115);
 
-    const tableTop = yOffset + 110;
-
-    // Table header background
-    doc.setFillColor(240, 240, 240);
-    doc.rect(50, tableTop, 500, 25, "F");
-    doc.setDrawColor(200, 200, 200);
-    doc.rect(50, tableTop, 500, 25);
-
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(0, 0, 0);
-    doc.setFontSize(12);
-    doc.text("S.No", 55, tableTop + 17);
-    doc.text("Product", 100, tableTop + 17);
-    doc.text("Qty", 235, tableTop + 17);
-    doc.text("MRP", 275, tableTop + 17);
-    doc.text("Discount", 345, tableTop + 17);
-    doc.text("Price", 425, tableTop + 17);
-    doc.text("Total", 485, tableTop + 17);
-
-    return tableTop + 25; // Return starting y for rows
-  }
-
-  let y = addHeader(marginTop);
-  let grandTotal = 0;
-  let sno = 1;
-
-  for (let i = 0; i < products.length; i++) {
-    const p = products[i];
+  // Table Content Preparation
+  const tableBody = products.map((p, idx) => {
     const productName = p.productName || p.name || "";
     const qty = p.selectedQuantity || p.quantity || p.qty || p.defaultQuantity || 1;
     const actualPrice = Number(p.actualPrice ?? 0);
@@ -56,47 +38,72 @@ export default async function generateBill(products, phone, email) {
       ? Number(p.discountedPrice)
       : Number((actualPrice * (1 - discount / 100)).toFixed(2));
     const total = discountPrice * qty;
-    grandTotal += total;
-
-    // Check if next line will overflow page
-    if (y + lineHeight > pageHeight - 100) {
-      doc.addPage();
-      // y = addHeader(marginTop);
-    }
-
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(0, 0, 0);
-    doc.setFontSize(11);
-    doc.text(String(sno++), 55, y + 17);
-    doc.text(String(productName), 100, y + 17);
-    doc.text(String(qty), 235, y + 17);
-    doc.text(actualPrice.toFixed(2) + " INR", 275, y + 17);
-    doc.text(String(discount) + " %", 345, y + 17);
-    doc.text(discountPrice.toFixed(2), 425, y + 17);
-    doc.text(total.toFixed(2) + " INR", 485, y + 17);
-
-    // Row line
-    doc.setDrawColor(220, 220, 220);
-    doc.line(50, y + 25, 550, y + 25);
-
-    y += lineHeight;
-  }
-
-  // Check space for grand total
-  if (y + 40 > pageHeight - 60) {
-    doc.addPage();
-    y = addHeader(marginTop); // Optional: you can skip re-adding header here if not needed
-  }
-
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(14);
-  doc.setTextColor(0, 0, 0);
-  doc.text(`Grand Total: ${grandTotal.toFixed(2)} INR`, 380, y + 40, {
-    align: "left",
+    return [
+      idx + 1,
+      productName,
+      qty,
+      `${actualPrice.toFixed(2)} INR`,
+      `${discount} %`,
+      `${discountPrice.toFixed(2)} INR`,
+      `${total.toFixed(2)} INR`
+    ];
   });
 
-  doc.save(`bill_${phone}_${Date.now()}.pdf`);
+  // Grand Total
+  const grandTotal = tableBody.reduce((acc, row) => acc + Number(row[6].replace(" INR", "")), 0);
 
-  const pdfBlob = doc.output("blob");
-  return pdfBlob;
+  // AUTOTABLE
+  autoTable(doc, {
+    startY: 140,
+    head: [[
+      "S.No", "Product", "Qty", "MRP", "Discount", "Price", "Total"
+    ]],
+    body: tableBody,
+    styles: {
+      font: "helvetica",
+      fontSize: 11,
+      valign: 'top',
+      halign: 'center',
+      cellPadding: { top: 3, right: 2, bottom: 3, left: 2 },
+      cellWidth: 'wrap', // auto adjust
+      overflow: 'linebreak',
+      textColor: 33,
+      lineColor: [200, 200, 200],
+    },
+    headStyles: {
+      fillColor: [230, 230, 230],
+      textColor: 0,
+      fontStyle: "bold"
+    },
+    columnStyles: {
+      0: {cellWidth: 45}, // S.No
+      1: {cellWidth: 160, halign: 'left'}, // Product, width enough and left-aligned
+      2: {cellWidth: 40}, // Qty
+      3: {cellWidth: 65}, // MRP
+      4: {cellWidth: 60}, // Discount
+      5: {cellWidth: 65}, // Price
+      6: {cellWidth: 80}  // Total
+    },
+    didDrawCell: (data) => {
+      // No-op; can add custom cell formatting if needed
+    },
+    margin: { left: 40, right: 40 },
+    theme: 'grid'
+  });
+
+  // GRAND TOTAL
+  const finalY = doc.lastAutoTable.finalY || 140 + tableBody.length * 20;
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(14);
+  doc.text(`Grand Total: ${grandTotal.toFixed(2)} INR`, 400, finalY + 30);
+
+  // FOOTER/THANK YOU NOTE
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "italic");
+  doc.text("Thank you for your business!", 55, finalY + 60);
+  doc.text("If you have questions about this invoice, contact us at selvaganapathytraders.official@gmail.com", 55, finalY + 80);
+
+  // Save & Return PDF Blob
+  doc.save(`bill_${phone}_${Date.now()}.pdf`);
+  return doc.output("blob");
 }
