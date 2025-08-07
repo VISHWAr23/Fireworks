@@ -2,43 +2,26 @@ import React, { useState, useEffect } from "react";
 import { ShoppingCart, X, Plus, Minus, ShoppingBag } from "lucide-react";
 import generateBill from "../src/generateBill.js";
 
-const CrackersCartTable = () => {
-  const [quantities, setQuantities] = useState({});
-  const [showModal, setShowModal] = useState(false);
+const CrackersCartTable = ({
+  products,
+  quantities,
+  updateQuantity,
+  setQuantityForId,
+  isLoading,
+  error,
+  showModal,
+  setShowModal,
+}) => {
+  // Remove internal showModal state, use props for modal visibility
   const [showEmptyCartModal, setShowEmptyCartModal] = useState(false);
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [phoneError, setPhoneError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [products, setProducts] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  // Fetch products from API
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const response = await fetch(
-          `${import.meta.env.VITE_SERVER_URL}/products`
-        );
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const data = await response.json();
-        setProducts(data);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchProducts();
-  }, []);
 
   // Group products by productType
-  const groupByCategory = (products) => {
-    return products.reduce((acc, product) => {
+  const groupByCategory = (productsList) => {
+    return productsList.reduce((acc, product) => {
       const category = product.productType || "Uncategorized";
       if (!acc[category]) {
         acc[category] = [];
@@ -49,13 +32,6 @@ const CrackersCartTable = () => {
   };
 
   const categorizedProducts = groupByCategory(products);
-
-  const updateQuantity = (id, change) => {
-    setQuantities((prev) => ({
-      ...prev,
-      [id]: Math.max(0, (prev[id] || 0) + change),
-    }));
-  };
 
   const calculateTotal = (price, quantity) => {
     return (price * quantity).toFixed(2);
@@ -78,7 +54,6 @@ const CrackersCartTable = () => {
     return products.filter((item) => quantities[item._id] > 0);
   };
 
-  // Handle View Cart button click with modal notification
   const handleViewCartClick = () => {
     if (getTotalItems() === 0) {
       setShowEmptyCartModal(true);
@@ -87,7 +62,6 @@ const CrackersCartTable = () => {
     setShowModal(true);
   };
 
-  // Updated handleGenerateBill function with proper mail integration
   const handleGenerateBill = async (e) => {
     e.preventDefault();
     if (!phone.trim()) {
@@ -109,16 +83,13 @@ const CrackersCartTable = () => {
 
     setLoading(true);
     try {
-      // Prepare products with quantities for PDF generation
       const productsWithQuantities = selected.map((product) => ({
         ...product,
         selectedQuantity: quantities[product._id] || 0,
       }));
 
-      // Generate the bill and get the PDF blob
       const pdfBlob = await generateBill(productsWithQuantities, phone, email);
 
-      // If email is provided, send the PDF via email
       if (email && pdfBlob) {
         try {
           const formData = new FormData();
@@ -152,7 +123,6 @@ const CrackersCartTable = () => {
       }
 
       setShowModal(false);
-      // Reset form
       setPhone("");
       setEmail("");
     } catch (err) {
@@ -190,28 +160,19 @@ const CrackersCartTable = () => {
 
     const handleInputBlur = () => {
       const num = parseInt(inputValue, 10);
-      setQuantities((prev) => ({
-        ...prev,
-        [item._id]: isNaN(num) ? 0 : num,
-      }));
+      setQuantityForId(item._id, isNaN(num) ? 0 : num);
       setInputValue(isNaN(num) ? "0" : num.toString());
     };
 
     const handleDecrement = () => {
-      const num = Math.max(0, (parseInt(inputValue, 10) || 0) - 1);
-      setQuantities((prev) => ({
-        ...prev,
-        [item._id]: num,
-      }));
+      const num = Math.max(0, quantity - 1);
+      setQuantityForId(item._id, num);
       setInputValue(num.toString());
     };
 
     const handleIncrement = () => {
-      const num = (parseInt(inputValue, 10) || 0) + 1;
-      setQuantities((prev) => ({
-        ...prev,
-        [item._id]: num,
-      }));
+      const num = quantity + 1;
+      setQuantityForId(item._id, num);
       setInputValue(num.toString());
     };
 
@@ -228,10 +189,8 @@ const CrackersCartTable = () => {
           </div>
 
           <div className="text-left">
-            <div className="text-white font-semibold text-lg">{item.name}</div>
-            <div className="text-gray-300 text-sm">
-              {item.productDescription}
-            </div>
+            <div className="text-white font-semibold text-lg break-words leading-tight">{item.name}</div>
+            <div className="text-gray-300 text-sm break-words leading-tight mt-1">{item.productDescription}</div>
           </div>
 
           <div className="text-center">
@@ -241,9 +200,7 @@ const CrackersCartTable = () => {
           </div>
 
           <div className="text-center">
-            <div className="text-green-400 font-bold text-xl">
-              ₹{price.toFixed(2)}
-            </div>
+            <div className="text-green-400 font-bold text-xl">₹{price.toFixed(2)}</div>
           </div>
 
           <div className="text-center">
@@ -282,42 +239,36 @@ const CrackersCartTable = () => {
           </div>
         </div>
 
-        {/* Mobile View - Improved Alignment */}
+        {/* Mobile View - Fixed with same grid structure but better text wrapping */}
         <div className="md:hidden">
-          <div className="grid grid-cols-12 gap-2 items-center px-1">
-            {/* Number */}
+          <div className="grid grid-cols-12 gap-2 items-center px-1 min-h-[60px]">
             <div className="col-span-1 flex justify-center">
               <div className="text-xs font-bold text-white bg-gray-700/50 p-1.5 rounded-full w-6 h-6 flex items-center justify-center">
                 {index + 1}
               </div>
             </div>
 
-            {/* Product Info */}
-            <div className="col-span-4 text-left pl-1">
-              <div className="text-white font-semibold text-sm leading-tight">
+            <div className="col-span-4 text-left pl-1 min-w-0">
+              <div className="text-white font-semibold text-sm leading-tight break-words hyphens-auto">
                 {item.name}
               </div>
-              <div className="text-gray-300 text-xs leading-tight mt-0.5 line-clamp-2">
+              <div className="text-gray-300 text-xs leading-tight mt-0.5 break-words hyphens-auto">
                 {item.productDescription}
               </div>
             </div>
 
-            {/* Price and Discount */}
             <div className="col-span-3 text-center">
               <div className="flex flex-col items-center space-y-0.5">
                 <div className="text-red-400 font-semibold line-through text-xs">
                   ₹{item.actualPrice.toFixed(2)}
                 </div>
-                <div className="text-green-400 font-bold text-sm">
-                  ₹{price.toFixed(2)}
-                </div>
+                <div className="text-green-400 font-bold text-sm">₹{price.toFixed(2)}</div>
                 <span className="bg-gradient-to-r from-red-500 to-pink-500 text-white px-1.5 py-0.5 rounded-full text-xs font-bold">
                   {discount}% OFF
                 </span>
               </div>
             </div>
 
-            {/* Quantity Controls */}
             <div className="col-span-2 flex justify-center items-center">
               <div className="flex flex-col items-center space-y-1">
                 <button
@@ -343,7 +294,6 @@ const CrackersCartTable = () => {
               </div>
             </div>
 
-            {/* Total */}
             <div className="col-span-2 text-center">
               <div className="text-sm font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-pink-400 to-purple-400">
                 ₹{total}
@@ -355,6 +305,7 @@ const CrackersCartTable = () => {
     );
   };
 
+  // Loading and error states
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -365,9 +316,7 @@ const CrackersCartTable = () => {
 
   if (error) {
     return (
-      <div className="text-center text-red-500 py-8">
-        Error loading products: {error}
-      </div>
+      <div className="text-center text-red-500 py-8">Error loading products: {error}</div>
     );
   }
 
@@ -386,7 +335,7 @@ const CrackersCartTable = () => {
         </div>
       </div>
 
-      {/* Mobile Table Header - Improved */}
+      {/* Mobile Table Header */}
       <div className="md:hidden bg-gradient-to-r from-purple-800/80 via-indigo-800/80 to-blue-800/80 backdrop-blur-sm text-white border-y border-white/20 mx-2 rounded-lg mb-2">
         <div className="grid grid-cols-12 gap-2 px-2 py-2 text-xs font-bold">
           <div className="col-span-1 text-center">No.</div>
@@ -411,45 +360,13 @@ const CrackersCartTable = () => {
         ))}
       </div>
 
-      {/* Cart Summary */}
-      <div className="bg-gradient-to-r from-purple-800/50 via-indigo-800/50 to-blue-800/50 backdrop-blur-sm border-t-2 border-white/20">
-        <div className="flex flex-col md:flex-row justify-between items-center px-4 md:px-6 py-4 md:py-6 space-y-3 md:space-y-0">
-          <div className="flex items-center space-x-3">
-            <div className="bg-gradient-to-r from-pink-500 to-red-500 text-white rounded-full w-8 h-8 md:w-12 md:h-12 flex items-center justify-center font-bold text-sm md:text-lg shadow-lg">
-              {getTotalItems()}
-            </div>
-            <span className="text-white font-semibold text-base md:text-xl">
-              {getTotalItems()} {getTotalItems() === 1 ? "item" : "items"}
-            </span>
-          </div>
-
-          <div className="text-center">
-            <div className="text-2xl md:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-pink-400 to-purple-400">
-              ₹ {calculateGrandTotal()}
-            </div>
-            <div className="text-sm text-gray-300">Total Amount</div>
-          </div>
-
-          <button
-            className="bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 hover:from-pink-600 hover:via-purple-600 hover:to-indigo-600 text-white px-6 py-3 md:px-8 md:py-4 rounded-lg md:rounded-xl font-bold text-sm md:text-lg shadow-xl transform hover:scale-105 transition-all duration-300 flex items-center space-x-2 border border-white/20"
-            onClick={handleViewCartClick}
-          >
-            <ShoppingCart size={16} className="md:w-6 md:h-6" />
-            <span>View Cart</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Empty Cart Modal - NEW */}
+      {/* Empty cart modal */}
       {showEmptyCartModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
           <div className="bg-gradient-to-br from-red-900/90 to-pink-900/90 rounded-2xl shadow-2xl w-full max-w-md border border-red-500/30 relative overflow-hidden">
-            {/* Animated background effect */}
             <div className="absolute inset-0 bg-gradient-to-br from-red-600/20 via-pink-600/20 to-purple-600/20 animate-pulse"></div>
 
-            {/* Content */}
             <div className="relative z-10 p-6 text-center">
-              {/* Close button */}
               <button
                 onClick={() => setShowEmptyCartModal(false)}
                 className="absolute top-4 right-4 text-gray-300 hover:text-white transition-colors p-1 rounded-full hover:bg-white/10"
@@ -457,25 +374,18 @@ const CrackersCartTable = () => {
                 <X size={20} />
               </button>
 
-              {/* Icon */}
               <div className="mb-4 flex justify-center">
                 <div className="bg-gradient-to-br from-red-500 to-pink-500 rounded-full p-4 shadow-lg">
                   <ShoppingBag size={40} className="text-white" />
                 </div>
               </div>
 
-              {/* Title */}
-              <h2 className="text-2xl font-bold text-white mb-3">
-                Your Cart is Empty
-              </h2>
+              <h2 className="text-2xl font-bold text-white mb-3">Your Cart is Empty</h2>
 
-              {/* Message */}
               <p className="text-gray-200 mb-6 leading-relaxed">
-                Please select at least one product to view your cart and proceed
-                with the purchase.
+                Please select at least one product to view your cart and proceed with the purchase.
               </p>
 
-              {/* Action Button */}
               <button
                 onClick={() => setShowEmptyCartModal(false)}
                 className="bg-gradient-to-r from-pink-500 via-red-500 to-orange-500 hover:from-pink-600 hover:via-red-600 hover:to-orange-600 text-white px-8 py-3 rounded-xl font-bold text-lg shadow-xl transform hover:scale-105 transition-all duration-300 border border-white/20"
@@ -493,9 +403,7 @@ const CrackersCartTable = () => {
           <div className="bg-gradient-to-br from-purple-900 to-indigo-900 rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-hidden border border-white/20 relative">
             {/* Header */}
             <div className="flex justify-between items-center p-4 md:p-6 border-b border-white/20">
-              <h2 className="text-xl md:text-2xl font-bold text-white">
-                Generate Bill
-              </h2>
+              <h2 className="text-xl md:text-2xl font-bold text-white">Generate Bill</h2>
               <button
                 onClick={() => setShowModal(false)}
                 className="text-gray-300 hover:text-white transition-colors p-1"
@@ -506,17 +414,18 @@ const CrackersCartTable = () => {
             </div>
 
             {/* Content */}
-            <div className="p-4 md:p-6 overflow-y-auto max-h-[calc(90vh-200px)]">
-              {/* Selected Items */}
+            <div className="p-4 md:p-6 overflow-y-auto max-h-[calc(90vh-200px)]" style={{
+              msOverflowStyle: 'none',
+              scrollbarWidth: 'none'
+            }}>
               <div className="mb-6">
-                <h3 className="text-lg font-semibold text-white mb-3">
-                  Selected Items
-                </h3>
-                <div className="max-h-48 overflow-y-auto bg-black/20 rounded-lg p-3">
+                <h3 className="text-lg font-semibold text-white mb-3">Selected Items</h3>
+                <div className="max-h-48 overflow-y-auto bg-black/20 rounded-lg p-3" style={{
+                  msOverflowStyle: 'none',
+                  scrollbarWidth: 'none'
+                }}>
                   {getSelectedItems().length === 0 ? (
-                    <div className="text-center text-gray-400 py-4">
-                      No items selected
-                    </div>
+                    <div className="text-center text-gray-400 py-4">No items selected</div>
                   ) : (
                     getSelectedItems().map((item) => {
                       const quantity = quantities[item._id] || 0;
@@ -527,13 +436,13 @@ const CrackersCartTable = () => {
                           key={item._id}
                           className="flex justify-between items-center py-2 border-b border-white/10 last:border-b-0"
                         >
-                          <div className="text-white font-semibold flex-1 pr-2">
-                            <div className="text-sm">{item.name}</div>
+                          <div className="text-white font-semibold flex-1 pr-2 min-w-0">
+                            <div className="text-sm break-words">{item.name}</div>
                             <div className="text-xs text-gray-400">
                               ₹{price.toFixed(2)} x {quantity}
                             </div>
                           </div>
-                          <div className="text-green-400 font-bold text-sm">
+                          <div className="text-green-400 font-bold text-sm flex-shrink-0">
                             ₹{total}
                           </div>
                         </div>
@@ -543,13 +452,11 @@ const CrackersCartTable = () => {
                 </div>
               </div>
 
-              {/* Total */}
               <div className="flex justify-between items-center py-3 font-bold text-lg border-t border-white/20 mb-6">
                 <div className="text-white">Total Amount</div>
                 <div className="text-green-400">₹{calculateGrandTotal()}</div>
               </div>
 
-              {/* Form */}
               <form onSubmit={handleGenerateBill} className="space-y-4">
                 <div>
                   <label className="block text-white text-sm font-semibold mb-2">
@@ -565,9 +472,7 @@ const CrackersCartTable = () => {
                     placeholder="Enter phone number"
                     required
                   />
-                  {phoneError && (
-                    <p className="text-red-400 text-xs mt-1">{phoneError}</p>
-                  )}
+                  {phoneError && <p className="text-red-400 text-xs mt-1">{phoneError}</p>}
                 </div>
 
                 <div>
