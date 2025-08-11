@@ -109,8 +109,9 @@ export default function HomePage() {
   // Responsive Interactive Logo component
   const InteractiveLogo = () => (
     <div
-      className={`cursor-pointer transition-all duration-200 select-none ${isPressed ? "scale-95 opacity-80" : "hover:scale-105"
-        }`}
+      className={`cursor-pointer transition-all duration-200 select-none ${
+        isPressed ? "scale-95 opacity-80" : "hover:scale-105"
+      }`}
       {...handleLogoInteraction()}
     >
       <img
@@ -154,10 +155,9 @@ export default function HomePage() {
       </div>
 
       {/* Header with Interactive Logo and Shop Name - FIXED TOPMOST */}
-      {/* Header with Interactive Logo and Shop Name - FIXED TOPMOST */}
       <header className="fixed top-0 left-0 right-0 z-[9999] w-full shadow-2xl">
         <div
-          className="flex items-center justify-center px-2 sm:px-4 md:px-6 gap-2 sm:gap-3 md:gap-4 py-2 sm:py-3 md:py-4"
+          className="flex items-center justify-center px-2 sm:px-4 md:px-6 gap-2 sm:gap-3 md:gap-4 py-3 sm:py-3 md:py-4 min-h-[80px] sm:min-h-[60px]"
           style={{
             background:
               "linear-gradient(135deg, #1a0a2e 0%, #16213e 25%, #0f3460 50%, #533483 75%, #7209b7 100%)",
@@ -168,7 +168,7 @@ export default function HomePage() {
           </div>
           <div className="leading-none text-white text-left flex-1 min-w-0 flex items-center justify-between">
             <div className="flex-1 min-w-0">
-              <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl font-bold mb-1 sm:mb-2 leading-tight text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-pink-400 to-purple-400 truncate">
+              <h1 className="text-sm xs:text-base sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl font-bold mb-1 sm:mb-2 leading-tight text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-pink-400 to-purple-400 break-words hyphens-auto">
                 SELVAGANAPATHY TRADERS
               </h1>
               <p className="text-yellow-300 text-xs sm:text-sm md:text-base font-medium tracking-wider text-left">
@@ -177,7 +177,7 @@ export default function HomePage() {
             </div>
 
             {/* Animated Hover Buttons */}
-            <div className="flex gap-2 sm:gap-3 ml-2 sm:ml-4">
+            <div className="flex gap-2 sm:gap-3 ml-2 sm:ml-4 flex-shrink-0">
               {/* Button 1 - Contact Us */}
               <button
                 className="group relative px-3 sm:px-4 py-1.5 sm:py-2 bg-gradient-to-r from-pink-500 to-purple-600 text-white text-xs sm:text-sm font-semibold rounded-lg overflow-hidden transition-all duration-300 hover:scale-110 hover:shadow-2xl hover:shadow-pink-500/50 transform hover:-translate-y-1"
