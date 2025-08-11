@@ -12,7 +12,10 @@ import {
 
 export default function Footer() {
   return (
-    <footer className="relative bg-gradient-to-b from-gray-900 via-gray-800 to-black overflow-hidden">
+    <footer
+      id="footer"
+      className="relative bg-gradient-to-b from-gray-900 via-gray-800 to-black overflow-hidden"
+    >
       {/* Animated background sparkles */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-10 left-10 w-2 h-2 bg-yellow-400 rounded-full animate-ping"></div>
@@ -59,12 +62,20 @@ export default function Footer() {
               </div>
               <div className="flex items-center text-gray-300 justify-center lg:justify-start">
                 <Phone className="w-5 h-5 mr-3 text-green-400 flex-shrink-0" />
-                <span>+91 99440 87728</span>
+                <a href="tel:+919944087728" className="hover:underline">
+                  +91 99440 87728
+                </a>
               </div>
               <div className="flex items-center text-gray-300 justify-center lg:justify-start">
                 <Mail className="w-5 h-5 mr-3 text-blue-400 flex-shrink-0" />
-                <span>selvaganapathytraders.official@gmail.com</span>
+                <a
+                  href="mailto:selvaganapathytraders.official@gmail.com"
+                  className="hover:underline"
+                >
+                  selvaganapathytraders.official@gmail.com
+                </a>
               </div>
+
               <div className="flex items-center text-gray-300 justify-center lg:justify-start">
                 <Clock className="w-5 h-5 mr-3 text-yellow-400 flex-shrink-0" />
                 <span>Mon-Sat: 9AM-8PM | Sun: 10AM-6PM</span>

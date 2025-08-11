@@ -22,3 +22,5 @@ Sitemap: https://selvaganapathytraders.in/sitemap.xml
 
 # Crawl delay for better server performance
 Crawl-delay: 1
+
+Sitemap: https://selvaganapathytraders.in/sitemap.xml
