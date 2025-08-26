@@ -2,42 +2,41 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
 /**
- * Generates a professional invoice-style bill (MNC-like) using jsPDF + autotable.
- * - Neat table layout with borders, proper wrapping, and no overlaps.
- * - Company info, customer contact, and a clean total section.
+ * Generates a professional invoice-style bill using jsPDF + autotable.
+ * - Proper table layout
+ * - Company info, customer contact
+ * - Totals aligned neatly to the right
  */
-export default async function generateBill(products, phone, email) {
+export default async function generateBill(products, phone, email, billDiscount = 0) {
   const doc = new jsPDF({ unit: "pt", format: "a4" });
 
   // COMPANY HEADER
   doc.setFont("helvetica", "bold");
   doc.setFontSize(22);
-  doc.text("Selvaganapathy Fireworks", 55, 50);
+  doc.text("Selvaganapathy Traders", 55, 50);
   doc.setFontSize(12);
   doc.setFont("helvetica", "normal");
-  doc.text("Main Road, Kananjampatti,", 55, 75); // Replace with your address
+  doc.text("Main Road, Kananjampatti,", 55, 75);
   doc.text("Sivakasi-Vembakkottai Road, Tamil Nadu", 55, 90);
-  doc.text("Phone: +91 9944087728", 55, 105); // Placeholder for GSTIN/tax info
+  doc.text("Phone: +91 9944087728", 55, 105);
 
-  // INVOICE INFO (on right) - Moved left and with better spacing
+  // INVOICE INFO
   doc.setFont("helvetica", "bold");
-  doc.text("INVOICE", 400, 50); // Moved from 470 to 400
+  doc.text("INVOICE", 400, 50);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(11);
   const today = new Date();
-  doc.text(`Date: ${today.toLocaleDateString()}`, 400, 75); // Moved from 470 to 400
-  doc.text(`Phone: ${phone}`, 400, 95); // Moved from 470 to 400
+  doc.text(`Date: ${today.toLocaleDateString()}`, 400, 75);
+  doc.text(`Phone: ${phone}`, 400, 95);
 
-  // Email with better positioning and wrapping
+  // Email positioning
   let currentY = 115;
   if (email) {
-    // Check if email is too long, if so, wrap it
     const emailText = `Email: ${email}`;
     const textWidth = doc.getTextWidth(emailText);
-    const maxWidth = 150; // Maximum width for email text
+    const maxWidth = 150;
 
     if (textWidth > maxWidth) {
-      // Split email if too long
       const emailParts = email.split("@");
       doc.text(`Email: ${emailParts[0]}@`, 400, currentY);
       doc.text(`${emailParts[1]}`, 400, currentY + 15);
@@ -49,43 +48,28 @@ export default async function generateBill(products, phone, email) {
   }
 
   // Table Content Preparation
-  const tableBody = products.map((p, idx) => {
-    const productName = p.productName || p.name || "";
-    const qty =
-      p.selectedQuantity || p.quantity || p.qty || p.defaultQuantity || 1;
-    const actualPrice = Number(p.actualPrice ?? 0);
-    const discount =
-      p.discount ??
-      Math.round(
-        ((actualPrice - (p.discountedPrice || actualPrice)) / actualPrice) * 100
-      ) ??
-      0;
-    const discountPrice =
-      p.discountedPrice !== undefined
-        ? Number(p.discountedPrice)
-        : Number((actualPrice * (1 - discount / 100)).toFixed(2));
-    const total = discountPrice * qty;
-    return [
-      idx + 1,
-      productName,
-      qty,
-      `${actualPrice.toFixed(2)} INR`,
-      `${discount} %`,
-      `${discountPrice.toFixed(2)} INR`,
-      `${total.toFixed(2)} INR`,
-    ];
-  });
+  const tableBody = products.map((p, idx) => [
+    idx + 1,
+    p.productName || p.name || "",
+    p.selectedQuantity || p.quantity || p.qty || p.defaultQuantity || 1,
+    `${Number(p.actualPrice ?? 0).toFixed(2)} INR`
+  ]);
 
-  // Grand Total
-  const grandTotal = tableBody.reduce(
-    (acc, row) => acc + Number(row[6].replace(" INR", "")),
+  // Calculate grand total from products
+  const grandTotal = products.reduce(
+    (acc, p) => acc + Number(p.actualPrice ?? 0) * (p.selectedQuantity || p.quantity || p.qty || p.defaultQuantity || 1),
     0
   );
+
+  // Calculate discounted total
+  const discountedTotal = billDiscount > 0
+    ? grandTotal * (1 - billDiscount / 100)
+    : grandTotal;
 
   // AUTOTABLE
   autoTable(doc, {
     startY: 140,
-    head: [["S.No", "Product", "Qty", "MRP", "Discount", "Price", "Total"]],
+    head: [["S.No", "Product", "Qty", "Price"]],
     body: tableBody,
     styles: {
       font: "helvetica",
@@ -93,7 +77,7 @@ export default async function generateBill(products, phone, email) {
       valign: "top",
       halign: "center",
       cellPadding: { top: 3, right: 2, bottom: 3, left: 2 },
-      cellWidth: "wrap", // auto adjust
+      cellWidth: "auto",
       overflow: "linebreak",
       textColor: 33,
       lineColor: [200, 200, 200],
@@ -104,35 +88,38 @@ export default async function generateBill(products, phone, email) {
       fontStyle: "bold",
     },
     columnStyles: {
-      0: { cellWidth: 45 }, // S.No
-      1: { cellWidth: 160, halign: "left" }, // Product, width enough and left-aligned
-      2: { cellWidth: 40 }, // Qty
-      3: { cellWidth: 65 }, // MRP
-      4: { cellWidth: 60 }, // Discount
-      5: { cellWidth: 65 }, // Price
-      6: { cellWidth: 80 }, // Total
+      0: { cellWidth: 'auto' },
+      1: { cellWidth: 'auto', halign: "left" },
+      2: { cellWidth: 'auto' },
+      3: { cellWidth: 'auto' },
     },
-    didDrawCell: (data) => {
-      // No-op; can add custom cell formatting if needed
-    },
-    margin: { left: 40, right: 40 },
+    margin: { left: 10, right: 10 },
     theme: "grid",
+    tableWidth: 'auto',
   });
 
-  // GRAND TOTAL
+  // GRAND TOTAL & DISCOUNT
   const finalY = doc.lastAutoTable.finalY || 140 + tableBody.length * 20;
   doc.setFont("helvetica", "bold");
   doc.setFontSize(14);
-  doc.text(`Grand Total: ${grandTotal.toFixed(2)} INR`, 400, finalY + 30);
+  doc.text(`Grand Total: ${grandTotal.toFixed(2)} INR`, 55, finalY + 40);
+
+  if (billDiscount > 0) {
+    doc.setFontSize(13);
+    doc.text(`Discount Applied: ${billDiscount}%`, 55, finalY + 65);
+    doc.setFontSize(14);
+    doc.text(`Discounted Total: ${discountedTotal.toFixed(2)} INR`, 55, finalY + 90);
+  }
 
   // FOOTER/THANK YOU NOTE
-  doc.setFontSize(10);
+  doc.setFontSize(12);
   doc.setFont("helvetica", "italic");
-  doc.text("Thank you for your business!", 55, finalY + 60);
+  let footerY = billDiscount > 0 ? finalY + 130 : finalY + 80;
+  doc.text("Thank you for your business!", 55, footerY);
   doc.text(
     "If you have questions about this invoice, contact us at selvaganapathytraders.official@gmail.com",
     55,
-    finalY + 80
+    footerY + 20
   );
 
   // Save & Return PDF Blob

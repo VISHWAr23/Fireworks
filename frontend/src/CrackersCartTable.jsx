@@ -18,10 +18,39 @@ const CrackersCartTable = ({
   const [email, setEmail] = useState("");
   const [phoneError, setPhoneError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [cartDiscount, setCartDiscount] = useState(0);
+  const [discountApplied, setDiscountApplied] = useState(false);
 
-  // Group products by productType
+  // Define the order for product types
+  const productTypes = [
+    'ONE SOUND CRACKERS',
+    'FLOWER POTS',
+    'GROUND CHAKKAR',
+    'ROCKETS',
+    'TWINKLING STAR',
+    'ELECTRIC CRACKERS',
+    'DELUXE CRACKERS',
+    'SPECIAL GARLANDS',
+    'BIJILI',
+    'BOMBS',
+    'PENCIL',
+    'SPARKLERS',
+    'FANCY FOUNTAINS',
+    'MUSICAL ITEMS',
+    'AERIAL FANCY',
+    'AERIAL FANCY SHOTS',
+    'AERIAL MULTI SHOTS FANCY',
+    'SPECIAL FANCY FOUNTAIN',
+    'SPECIAL FOUNTAINS',
+    'NEW ARRIVAL FOUNTAINS',
+    'CHILDRENS FANCY',
+    'CAPS & SERPENT',
+    'GIFT BOXES'
+  ];
+
+  // Group products by productType and sort by predefined order
   const groupByCategory = (productsList) => {
-    return productsList.reduce((acc, product) => {
+    const grouped = productsList.reduce((acc, product) => {
       const category = product.productType || "Uncategorized";
       if (!acc[category]) {
         acc[category] = [];
@@ -29,6 +58,25 @@ const CrackersCartTable = ({
       acc[category].push(product);
       return acc;
     }, {});
+
+    // Create ordered object based on productTypes array
+    const orderedGrouped = {};
+
+    // First, add categories in the specified order
+    productTypes.forEach(type => {
+      if (grouped[type]) {
+        orderedGrouped[type] = grouped[type];
+      }
+    });
+
+    // Then add any remaining categories not in the predefined list
+    Object.keys(grouped).forEach(category => {
+      if (!productTypes.includes(category)) {
+        orderedGrouped[category] = grouped[category];
+      }
+    });
+
+    return orderedGrouped;
   };
 
   const categorizedProducts = groupByCategory(products);
@@ -45,9 +93,14 @@ const CrackersCartTable = ({
     return products
       .reduce((total, item) => {
         const quantity = quantities[item._id] || 0;
-        return total + (item.discountedPrice || item.actualPrice) * quantity;
+        return total + item.actualPrice * quantity;
       }, 0)
       .toFixed(2);
+  };
+
+  const getDiscountedTotal = () => {
+    const total = parseFloat(calculateGrandTotal());
+    return (total * (1 - cartDiscount / 100)).toFixed(2);
   };
 
   const getSelectedItems = () => {
@@ -88,7 +141,13 @@ const CrackersCartTable = ({
         selectedQuantity: quantities[product._id] || 0,
       }));
 
-      const pdfBlob = await generateBill(productsWithQuantities, phone, email);
+      // Pass cartDiscount to generateBill
+      const pdfBlob = await generateBill(
+        productsWithQuantities,
+        phone,
+        email,
+        discountApplied ? cartDiscount : 0 // pass discount %
+      );
 
       if (email && pdfBlob) {
         try {
@@ -141,24 +200,19 @@ const CrackersCartTable = ({
 
   const ProductRow = ({ item, index }) => {
     const quantity = quantities[item._id] || 0;
+    const price = item.actualPrice;
     const [inputValue, setInputValue] = useState(quantity.toString());
-    const price = item.discountedPrice || item.actualPrice;
-    const discount =
-      item.discount ||
-      Math.round(((item.actualPrice - price) / item.actualPrice) * 100);
-
-    useEffect(() => {
-      setInputValue((quantities[item._id] || 0).toString());
-    }, [quantities[item._id]]);
 
     const handleInputChange = (e) => {
       const value = e.target.value;
+      // Allow empty string or numbers only
       if (value === "" || /^\d+$/.test(value)) {
         setInputValue(value);
       }
     };
 
     const handleInputBlur = () => {
+      // On blur, update parent state
       const num = parseInt(inputValue, 10);
       setQuantityForId(item._id, isNaN(num) ? 0 : num);
       setInputValue(isNaN(num) ? "0" : num.toString());
@@ -176,12 +230,10 @@ const CrackersCartTable = ({
       setInputValue(num.toString());
     };
 
-    const total = calculateTotal(price, quantity);
-
     return (
       <div className="bg-gradient-to-r from-purple-900/40 via-indigo-900/40 to-blue-900/40 backdrop-blur-sm border border-white/10 rounded-xl mb-3 p-2 hover:shadow-xl transition-all duration-300">
         {/* Desktop View */}
-        <div className="hidden md:grid md:grid-cols-7 gap-4 items-center">
+        <div className="hidden md:grid md:grid-cols-5 gap-4 items-center">
           <div className="flex justify-center">
             <div className="text-lg font-bold text-white bg-gray-700/50 p-3 rounded-full w-10 h-10 flex items-center justify-center">
               {index + 1}
@@ -198,21 +250,9 @@ const CrackersCartTable = ({
           </div>
 
           <div className="text-center">
-            <div className="text-red-400 font-semibold line-through text-lg">
-              ₹{item.actualPrice.toFixed(2)}
-            </div>
-          </div>
-
-          <div className="text-center">
             <div className="text-green-400 font-bold text-xl">
               ₹{price.toFixed(2)}
             </div>
-          </div>
-
-          <div className="text-center">
-            <span className="bg-gradient-to-r from-red-500 to-pink-500 text-white px-2 py-0.5 rounded-full text-xs shadow-md">
-              {discount}% OFF
-            </span>
           </div>
 
           <div className="flex justify-center items-center space-x-2">
@@ -247,7 +287,7 @@ const CrackersCartTable = ({
 
           <div className="text-center">
             <div className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-pink-400 to-purple-400">
-              ₹{total}
+              ₹{calculateTotal(price, quantity)}
             </div>
           </div>
         </div>
@@ -272,15 +312,13 @@ const CrackersCartTable = ({
 
             <div className="col-span-3 text-center">
               <div className="flex flex-col items-center space-y-0.5">
-                <div className="text-red-400 font-semibold line-through text-xs">
-                  ₹{item.actualPrice.toFixed(2)}
-                </div>
                 <div className="text-green-400 font-bold text-sm">
                   ₹{price.toFixed(2)}
                 </div>
-                <span className="bg-gradient-to-r from-red-500 to-pink-500 text-white px-1.5 py-0.5 rounded-full text-xs font-bold">
-                  {discount}% OFF
-                </span>
+                {/* Remove discount display below */}
+                {/* <span className="bg-gradient-to-r from-red-500 to-pink-500 text-white px-1.5 py-0.5 rounded-full text-xs font-bold">
+                {discount}% OFF
+              </span> */}
               </div>
             </div>
 
@@ -311,7 +349,7 @@ const CrackersCartTable = ({
 
             <div className="col-span-2 text-center">
               <div className="text-sm font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-pink-400 to-purple-400">
-                ₹{total}
+                ₹{calculateTotal(price, quantity)}
               </div>
             </div>
           </div>
@@ -341,12 +379,10 @@ const CrackersCartTable = ({
     <div className="w-full rounded-2xl shadow-2xl overflow-hidden border border-white/20">
       {/* Desktop Table Header */}
       <div className="hidden md:block bg-gradient-to-r from-purple-800/80 via-indigo-800/80 to-blue-800/80 backdrop-blur-sm text-white border-y border-white/20 mx-4 rounded-lg mb-4">
-        <div className="grid grid-cols-7 gap-4 px-6 py-4 font-bold text-sm">
+        <div className="grid grid-cols-5 gap-4 px-6 py-4 font-bold text-sm">
           <div className="text-center">No.</div>
           <div className="text-left">Product Name</div>
-          <div className="text-center">Actual Price</div>
-          <div className="text-center">Discount Price</div>
-          <div className="text-center">Discount</div>
+          <div className="text-center">Price</div>
           <div className="text-center">Quantity</div>
           <div className="text-center">Total</div>
         </div>
@@ -365,16 +401,22 @@ const CrackersCartTable = ({
 
       {/* Products */}
       <div className="px-1 md:px-4 pb-6">
-        {Object.entries(categorizedProducts).map(([category, items]) => (
-          <React.Fragment key={category}>
-            <SectionHeader title={category.toUpperCase()} />
-            <div className="space-y-1 md:space-y-3">
-              {items.map((item, index) => (
-                <ProductRow key={item._id} item={item} index={index} />
-              ))}
-            </div>
-          </React.Fragment>
-        ))}
+        {(() => {
+          let globalIndex = 0; // Track continuous S.No
+          return Object.entries(categorizedProducts).map(([category, items]) => (
+            <React.Fragment key={category}>
+              <SectionHeader title={category.toUpperCase()} />
+              <div className="space-y-1 md:space-y-3">
+                {items.map((item) => {
+                  globalIndex += 1;
+                  return (
+                    <ProductRow key={item._id} item={item} index={globalIndex - 1} />
+                  );
+                })}
+              </div>
+            </React.Fragment>
+          ));
+        })()}
       </div>
 
       {/* Empty cart modal */}
@@ -408,7 +450,7 @@ const CrackersCartTable = ({
 
               <button
                 onClick={() => setShowEmptyCartModal(false)}
-                className="bg-gradient-to-r from-pink-500 via-red-500 to-orange-500 hover:from-pink-600 hover:via-red-600 hover:to-orange-600 text-white px-8 py-3 rounded-xl font-bold text-lg shadow-xl transform hover:scale-105 transition-all duration-300 border border-white/20"
+                className="bg-gradient-to-r from-pink-500 via-red-500 to-orange-500 hover:from-pink-600 hover:to-red-600 text-white px-8 py-3 rounded-xl font-bold text-lg shadow-xl transform hover:scale-105 transition-all duration-300 border border-white/20"
               >
                 Continue Shopping
               </button>
@@ -488,7 +530,7 @@ const CrackersCartTable = ({
 
               <div className="flex justify-between items-center py-3 font-bold text-lg border-t border-white/20 mb-6">
                 <div className="text-white">Total Amount</div>
-                <div className="text-green-400">₹{calculateGrandTotal()}</div>
+                <div className="text-green-400">₹{discountApplied ? getDiscountedTotal() : calculateGrandTotal()}</div>
               </div>
 
               <form onSubmit={handleGenerateBill} className="space-y-4">
@@ -500,9 +542,8 @@ const CrackersCartTable = ({
                     type="tel"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    className={`w-full px-4 py-3 bg-black/20 border rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500 transition-all duration-200 text-white placeholder-gray-400 ${
-                      phoneError ? "border-red-500" : "border-white/20"
-                    }`}
+                    className={`w-full px-4 py-3 bg-black/20 border rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500 transition-all duration-200 text-white placeholder-gray-400 ${phoneError ? "border-red-500" : "border-white/20"
+                      }`}
                     placeholder="Enter phone number"
                     required
                   />
@@ -525,6 +566,53 @@ const CrackersCartTable = ({
                   <p className="text-gray-400 text-xs mt-1">
                     If provided, the bill PDF will be sent to your email
                   </p>
+                </div>
+
+                <div>
+                  <label className="block text-white text-sm font-semibold mb-2">
+                    Discount on Total Bill (%)
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="number"
+                      value={cartDiscount}
+                      onChange={e => setCartDiscount(Number(e.target.value))}
+                      min="0"
+                      max="100"
+                      className="w-24 px-3 py-2 rounded-lg border border-white/20 bg-black/20 text-white"
+                      placeholder="0"
+                      disabled={discountApplied}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setDiscountApplied(true)}
+                      className="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-4 py-2 rounded-lg font-bold"
+                      disabled={discountApplied || cartDiscount <= 0}
+                    >
+                      Apply Discount
+                    </button>
+                    {discountApplied && (
+                      <button
+                        type="button"
+                        onClick={() => { setDiscountApplied(false); setCartDiscount(0); }}
+                        className="bg-gradient-to-r from-red-500 to-pink-500 text-white px-4 py-2 rounded-lg font-bold"
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
+                  {discountApplied && (
+                    <div className="mt-2 text-green-400 font-bold">
+                      Discounted Total: ₹{getDiscountedTotal()}
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex justify-between items-center py-3 font-bold text-lg border-t border-white/20 mb-6">
+                  <div className="text-white">Total Amount</div>
+                  <div className="text-green-400">
+                    ₹{discountApplied ? getDiscountedTotal() : calculateGrandTotal()}
+                  </div>
                 </div>
 
                 <button

@@ -19,9 +19,11 @@ const productTypes = [
   'SPARKLERS',
   'FANCY FOUNTAINS',
   'MUSICAL ITEMS',
+  'AERIAL FANCY',
   'AERIAL FANCY SHOTS',
   'AERIAL MULTI SHOTS FANCY',
   'SPECIAL FANCY FOUNTAIN',
+  'SPECIAL FOUNTAINS',
   'NEW ARRIVAL FOUNTAINS',
   'CHILDRENS FANCY',
   'CAPS & SERPENT',
@@ -95,7 +97,7 @@ const FireworksProductsCRUD = ({ onLogout }) => {
   // Handle form input changes
   const handleInputChange = (e) => {
     const { name, value, type, files } = e.target;
-    
+
     if (type === 'file' && files[0]) {
       setFormData(prev => ({ ...prev, [name]: files[0] }));
       // Create preview URL
@@ -162,15 +164,15 @@ const FireworksProductsCRUD = ({ onLogout }) => {
       formDataToSend.append('discount', formData.discount);
       formDataToSend.append('productDescription', formData.productDescription);
       formDataToSend.append('productType', formData.productType);
-      
+
       if (formData.image) {
         formDataToSend.append('image', formData.image);
       }
 
-      const url = editingProduct 
+      const url = editingProduct
         ? `${API_BASE_URL}/products/${editingProduct._id}`
         : `${API_BASE_URL}/products`;
-      
+
       const method = editingProduct ? 'PATCH' : 'POST';
 
       const response = await fetch(url, {
@@ -204,7 +206,7 @@ const FireworksProductsCRUD = ({ onLogout }) => {
       });
 
       if (!response.ok) throw new Error('Failed to delete product');
-      
+
       setSuccess('Product deleted successfully!');
       fetchProducts();
     } catch (err) {
@@ -241,7 +243,7 @@ const FireworksProductsCRUD = ({ onLogout }) => {
                 Manage your fireworks inventory and products
               </p>
             </div>
-            
+
             {/* Admin Info & Logout */}
             <div className="flex items-center gap-4">
               <div className="hidden sm:flex items-center gap-2 text-blue-100">
@@ -320,7 +322,7 @@ const FireworksProductsCRUD = ({ onLogout }) => {
               </div>
             </div>
           </div>
-          
+
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -332,7 +334,7 @@ const FireworksProductsCRUD = ({ onLogout }) => {
               </div>
             </div>
           </div>
-          
+
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -449,17 +451,12 @@ const FireworksProductsCRUD = ({ onLogout }) => {
                   <p className="text-sm text-gray-600 mb-4 line-clamp-2 leading-relaxed" title={product.productDescription}>
                     {product.productDescription}
                   </p>
-                  
+
                   {/* Price */}
                   <div className="flex items-center gap-2 mb-5">
                     <span className="text-xl font-bold text-gray-900">
-                      ₹{(product.actualPrice * (1 - product.discount / 100)).toFixed(2)}
+                      ₹{product.actualPrice.toFixed(2)}
                     </span>
-                    {product.discount > 0 && (
-                      <span className="text-sm text-gray-500 line-through">
-                        ₹{product.actualPrice.toFixed(2)}
-                      </span>
-                    )}
                   </div>
 
                   {/* Actions */}
@@ -495,7 +492,7 @@ const FireworksProductsCRUD = ({ onLogout }) => {
               {searchTerm || filterType ? 'No products match your search' : 'No products found'}
             </h3>
             <p className="text-gray-600 mb-6 max-w-md mx-auto">
-              {searchTerm || filterType 
+              {searchTerm || filterType
                 ? 'Try adjusting your search terms or filters to find what you\'re looking for'
                 : 'Get started by adding your first fireworks product to the inventory'
               }

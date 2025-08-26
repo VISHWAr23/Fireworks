@@ -109,9 +109,8 @@ export default function HomePage() {
   // Responsive Interactive Logo component
   const InteractiveLogo = () => (
     <div
-      className={`cursor-pointer transition-all duration-200 select-none ${
-        isPressed ? "scale-95 opacity-80" : "hover:scale-105"
-      }`}
+      className={`cursor-pointer transition-all duration-200 select-none ${isPressed ? "scale-95 opacity-80" : "hover:scale-105"
+        }`}
       {...handleLogoInteraction()}
     >
       <img
@@ -210,8 +209,8 @@ export default function HomePage() {
                 onClick={() => {
                   // If you have a URL of the PDF file to download:
                   const link = document.createElement("a");
-                  link.href = "/blank.pdf"; // Replace with the actual path or URL
-                  link.download = "PricingList.pdf"; // Filename for the downloaded file
+                  link.href = "/Pricelist.pdf"; // Replace with the actual path or URL
+                  link.download = "Pricelist.pdf"; // Filename for the downloaded file
                   document.body.appendChild(link);
                   link.click();
                   document.body.removeChild(link);
