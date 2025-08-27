@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { ShoppingCart, X, Plus, Minus, ShoppingBag } from "lucide-react";
+import { ShoppingCart, X, Plus, Minus, ShoppingBag, Search } from "lucide-react";
 import generateBill from "../src/generateBill.js";
 
 const CrackersCartTable = ({
@@ -12,7 +12,6 @@ const CrackersCartTable = ({
   showModal,
   setShowModal,
 }) => {
-  // Remove internal showModal state, use props for modal visibility
   const [showEmptyCartModal, setShowEmptyCartModal] = useState(false);
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
@@ -20,8 +19,10 @@ const CrackersCartTable = ({
   const [loading, setLoading] = useState(false);
   const [cartDiscount, setCartDiscount] = useState(0);
   const [discountApplied, setDiscountApplied] = useState(false);
+  // NEW: Separate states for each search bar
+  const [searchQueryByName, setSearchQueryByName] = useState("");
+  const [searchQueryBySno, setSearchQueryBySno] = useState("");
 
-  // Define the order for product types
   const productTypes = [
     'ONE SOUND CRACKERS',
     'FLOWER POTS',
@@ -48,7 +49,6 @@ const CrackersCartTable = ({
     'GIFT BOXES'
   ];
 
-  // Group products by productType and sort by predefined order
   const groupByCategory = (productsList) => {
     const grouped = productsList.reduce((acc, product) => {
       const category = product.productType || "Uncategorized";
@@ -59,17 +59,13 @@ const CrackersCartTable = ({
       return acc;
     }, {});
 
-    // Create ordered object based on productTypes array
     const orderedGrouped = {};
-
-    // First, add categories in the specified order
     productTypes.forEach(type => {
       if (grouped[type]) {
         orderedGrouped[type] = grouped[type];
       }
     });
 
-    // Then add any remaining categories not in the predefined list
     Object.keys(grouped).forEach(category => {
       if (!productTypes.includes(category)) {
         orderedGrouped[category] = grouped[category];
@@ -78,8 +74,6 @@ const CrackersCartTable = ({
 
     return orderedGrouped;
   };
-
-  const categorizedProducts = groupByCategory(products);
 
   const calculateTotal = (price, quantity) => {
     return (price * quantity).toFixed(2);
@@ -141,12 +135,11 @@ const CrackersCartTable = ({
         selectedQuantity: quantities[product._id] || 0,
       }));
 
-      // Pass cartDiscount to generateBill
       const pdfBlob = await generateBill(
         productsWithQuantities,
         phone,
         email,
-        discountApplied ? cartDiscount : 0 // pass discount %
+        discountApplied ? cartDiscount : 0
       );
 
       if (email && pdfBlob) {
@@ -203,16 +196,18 @@ const CrackersCartTable = ({
     const price = item.actualPrice;
     const [inputValue, setInputValue] = useState(quantity.toString());
 
+    useEffect(() => {
+        setInputValue(quantity.toString());
+    }, [quantity]);
+
     const handleInputChange = (e) => {
       const value = e.target.value;
-      // Allow empty string or numbers only
       if (value === "" || /^\d+$/.test(value)) {
         setInputValue(value);
       }
     };
 
     const handleInputBlur = () => {
-      // On blur, update parent state
       const num = parseInt(inputValue, 10);
       setQuantityForId(item._id, isNaN(num) ? 0 : num);
       setInputValue(isNaN(num) ? "0" : num.toString());
@@ -221,13 +216,11 @@ const CrackersCartTable = ({
     const handleDecrement = () => {
       const num = Math.max(0, quantity - 1);
       setQuantityForId(item._id, num);
-      setInputValue(num.toString());
     };
 
     const handleIncrement = () => {
       const num = quantity + 1;
       setQuantityForId(item._id, num);
-      setInputValue(num.toString());
     };
 
     return (
@@ -239,7 +232,6 @@ const CrackersCartTable = ({
               {index + 1}
             </div>
           </div>
-
           <div className="text-left">
             <div className="text-white font-semibold text-lg break-words leading-tight">
               {item.name}
@@ -248,43 +240,38 @@ const CrackersCartTable = ({
               {item.productDescription}
             </div>
           </div>
-
           <div className="text-center">
             <div className="text-green-400 font-bold text-xl">
               ₹{price.toFixed(2)}
             </div>
           </div>
-
           <div className="flex justify-center items-center space-x-2">
             <button
               onClick={handleDecrement}
               className="flex-shrink-0 aspect-square rounded-full bg-gradient-to-r from-pink-500 to-red-500 hover:from-pink-600 hover:to-red-600 
-             text-white flex items-center justify-center font-bold shadow-lg transform hover:scale-110 transition-all duration-200
-             w-10 h-10 md:w-12 md:h-12"
+              text-white flex items-center justify-center font-bold shadow-lg transform hover:scale-110 transition-all duration-200
+              w-10 h-10 md:w-12 md:h-12"
             >
               <Minus size={16} />
             </button>
-
             <input
               type="text"
               value={inputValue}
               onChange={handleInputChange}
               onBlur={handleInputBlur}
               className="bg-gray-800/70 text-white px-3 py-2 rounded-lg font-bold text-lg w-16 text-center 
-             border border-white/20 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+              border border-white/20 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
               placeholder="0"
             />
-
             <button
               onClick={handleIncrement}
               className="flex-shrink-0 aspect-square rounded-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 
-             text-white flex items-center justify-center font-bold shadow-lg transform hover:scale-110 transition-all duration-200
-             w-10 h-10 md:w-12 md:h-12"
+              text-white flex items-center justify-center font-bold shadow-lg transform hover:scale-110 transition-all duration-200
+              w-10 h-10 md:w-12 md:h-12"
             >
               <Plus size={16} />
             </button>
           </div>
-
           <div className="text-center">
             <div className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-pink-400 to-purple-400">
               ₹{calculateTotal(price, quantity)}
@@ -292,7 +279,7 @@ const CrackersCartTable = ({
           </div>
         </div>
 
-        {/* Mobile View - Fixed with same grid structure but better text wrapping */}
+        {/* Mobile View */}
         <div className="md:hidden">
           <div className="grid grid-cols-12 gap-2 items-center px-1 min-h-[60px]">
             <div className="col-span-1 flex justify-center">
@@ -300,7 +287,6 @@ const CrackersCartTable = ({
                 {index + 1}
               </div>
             </div>
-
             <div className="col-span-4 text-left pl-1 min-w-0">
               <div className="text-white font-semibold text-sm leading-tight break-words hyphens-auto">
                 {item.name}
@@ -309,19 +295,13 @@ const CrackersCartTable = ({
                 {item.productDescription}
               </div>
             </div>
-
             <div className="col-span-3 text-center">
               <div className="flex flex-col items-center space-y-0.5">
                 <div className="text-green-400 font-bold text-sm">
                   ₹{price.toFixed(2)}
                 </div>
-                {/* Remove discount display below */}
-                {/* <span className="bg-gradient-to-r from-red-500 to-pink-500 text-white px-1.5 py-0.5 rounded-full text-xs font-bold">
-                {discount}% OFF
-              </span> */}
               </div>
             </div>
-
             <div className="col-span-2 flex justify-center items-center">
               <div className="flex flex-col items-center space-y-1">
                 <button
@@ -346,7 +326,6 @@ const CrackersCartTable = ({
                 </button>
               </div>
             </div>
-
             <div className="col-span-2 text-center">
               <div className="text-sm font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-pink-400 to-purple-400">
                 ₹{calculateTotal(price, quantity)}
@@ -358,7 +337,23 @@ const CrackersCartTable = ({
     );
   };
 
-  // Loading and error states
+  // NEW: Filtering logic that combines both searches
+  const filteredProducts = products.filter((product, index) => {
+    const nameQuery = searchQueryByName.toLowerCase();
+    const snoQuery = searchQueryBySno.toLowerCase();
+
+    // Check for name match
+    const matchesName = product.name.toLowerCase().includes(nameQuery) ||
+                        (product.productDescription && product.productDescription.toLowerCase().includes(nameQuery));
+    
+    // Check for S.No match (only if a number is entered)
+    const matchesSno = snoQuery === "" || (index + 1).toString().includes(snoQuery);
+    
+    return matchesName && matchesSno;
+  });
+
+  const categorizedProducts = groupByCategory(filteredProducts);
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -377,6 +372,33 @@ const CrackersCartTable = ({
 
   return (
     <div className="w-full rounded-2xl shadow-2xl overflow-hidden border border-white/20">
+      {/* Search Bars Container */}
+      <div className="p-4 md:p-6  from-purple-900/80 via-indigo-900/80 to-blue-900/80 flex flex-col md:flex-row gap-4">
+        
+        {/* Search by S.No */}
+        <div className="relative w-full md:w-1/2">
+          <input
+            type="text"
+            placeholder="Search by S.No..."
+            value={searchQueryBySno}
+            onChange={(e) => setSearchQueryBySno(e.target.value)}
+            className="w-full pl-10 pr-4 py-3 bg-transparent border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-pink-500 transition-all duration-200"
+          />
+          <Search size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+        </div>
+        {/* Search by Name */}
+        <div className="relative w-full">
+          <input
+            type="text"
+            placeholder="Search by name..."
+            value={searchQueryByName}
+            onChange={(e) => setSearchQueryByName(e.target.value)}
+            className="w-full pl-10 pr-4 py-3 bg-transparent border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-pink-500 transition-all duration-200"
+          />
+          <Search size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+        </div>
+      </div>
+
       {/* Desktop Table Header */}
       <div className="hidden md:block bg-gradient-to-r from-purple-800/80 via-indigo-800/80 to-blue-800/80 backdrop-blur-sm text-white border-y border-white/20 mx-4 rounded-lg mb-4">
         <div className="grid grid-cols-5 gap-4 px-6 py-4 font-bold text-sm">
@@ -402,8 +424,8 @@ const CrackersCartTable = ({
       {/* Products */}
       <div className="px-1 md:px-4 pb-6">
         {(() => {
-          let globalIndex = 0; // Track continuous S.No
-          return Object.entries(categorizedProducts).map(([category, items]) => (
+          let globalIndex = 0;
+          const productRows = Object.entries(categorizedProducts).map(([category, items]) => (
             <React.Fragment key={category}>
               <SectionHeader title={category.toUpperCase()} />
               <div className="space-y-1 md:space-y-3">
@@ -416,15 +438,22 @@ const CrackersCartTable = ({
               </div>
             </React.Fragment>
           ));
+          
+          if (productRows.length === 0) {
+            return (
+              <div className="text-center text-gray-400 py-8">
+                No products found matching your search.
+              </div>
+            );
+          }
+          return productRows;
         })()}
       </div>
 
-      {/* Empty cart modal */}
       {showEmptyCartModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
           <div className="bg-gradient-to-br from-red-900/90 to-pink-900/90 rounded-2xl shadow-2xl w-full max-w-md border border-red-500/30 relative overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-br from-red-600/20 via-pink-600/20 to-purple-600/20 animate-pulse"></div>
-
             <div className="relative z-10 p-6 text-center">
               <button
                 onClick={() => setShowEmptyCartModal(false)}
@@ -432,22 +461,18 @@ const CrackersCartTable = ({
               >
                 <X size={20} />
               </button>
-
               <div className="mb-4 flex justify-center">
                 <div className="bg-gradient-to-br from-red-500 to-pink-500 rounded-full p-4 shadow-lg">
                   <ShoppingBag size={40} className="text-white" />
                 </div>
               </div>
-
               <h2 className="text-2xl font-bold text-white mb-3">
                 Your Cart is Empty
               </h2>
-
               <p className="text-gray-200 mb-6 leading-relaxed">
                 Please select at least one product to view your cart and proceed
                 with the purchase.
               </p>
-
               <button
                 onClick={() => setShowEmptyCartModal(false)}
                 className="bg-gradient-to-r from-pink-500 via-red-500 to-orange-500 hover:from-pink-600 hover:to-red-600 text-white px-8 py-3 rounded-xl font-bold text-lg shadow-xl transform hover:scale-105 transition-all duration-300 border border-white/20"
@@ -459,11 +484,9 @@ const CrackersCartTable = ({
         </div>
       )}
 
-      {/* Bill Generation Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
           <div className="bg-gradient-to-br from-purple-900 to-indigo-900 rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-hidden border border-white/20 relative">
-            {/* Header */}
             <div className="flex justify-between items-center p-4 md:p-6 border-b border-white/20">
               <h2 className="text-xl md:text-2xl font-bold text-white">
                 Generate Bill
@@ -476,8 +499,6 @@ const CrackersCartTable = ({
                 <X size={20} />
               </button>
             </div>
-
-            {/* Content */}
             <div
               className="p-4 md:p-6 overflow-y-auto max-h-[calc(90vh-200px)]"
               style={{
@@ -527,12 +548,10 @@ const CrackersCartTable = ({
                   )}
                 </div>
               </div>
-
               <div className="flex justify-between items-center py-3 font-bold text-lg border-t border-white/20 mb-6">
                 <div className="text-white">Total Amount</div>
                 <div className="text-green-400">₹{discountApplied ? getDiscountedTotal() : calculateGrandTotal()}</div>
               </div>
-
               <form onSubmit={handleGenerateBill} className="space-y-4">
                 <div>
                   <label className="block text-white text-sm font-semibold mb-2">
@@ -551,7 +570,6 @@ const CrackersCartTable = ({
                     <p className="text-red-400 text-xs mt-1">{phoneError}</p>
                   )}
                 </div>
-
                 <div>
                   <label className="block text-white text-sm font-semibold mb-2">
                     Email (optional - to receive PDF)
@@ -567,7 +585,6 @@ const CrackersCartTable = ({
                     If provided, the bill PDF will be sent to your email
                   </p>
                 </div>
-
                 <div>
                   <label className="block text-white text-sm font-semibold mb-2">
                     Discount on Total Bill (%)
@@ -607,14 +624,12 @@ const CrackersCartTable = ({
                     </div>
                   )}
                 </div>
-
                 <div className="flex justify-between items-center py-3 font-bold text-lg border-t border-white/20 mb-6">
                   <div className="text-white">Total Amount</div>
                   <div className="text-green-400">
                     ₹{discountApplied ? getDiscountedTotal() : calculateGrandTotal()}
                   </div>
                 </div>
-
                 <button
                   type="submit"
                   className="w-full bg-gradient-to-r from-pink-500 to-red-500 hover:from-pink-600 hover:to-red-600 text-white font-bold py-3 px-4 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 shadow-xl disabled:opacity-50 disabled:cursor-not-allowed mt-6"
