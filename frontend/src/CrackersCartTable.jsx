@@ -177,6 +177,8 @@ const CrackersCartTable = ({
       setShowModal(false);
       setPhone("");
       setEmail("");
+      // Clear the cart
+      Object.keys(quantities).forEach((id) => setQuantityForId(id, 0));
     } catch (err) {
       console.error("Bill generation error:", err);
       alert("Failed to generate bill. Please try again.");
@@ -197,7 +199,7 @@ const CrackersCartTable = ({
     const [inputValue, setInputValue] = useState(quantity.toString());
 
     useEffect(() => {
-        setInputValue(quantity.toString());
+      setInputValue(quantity.toString());
     }, [quantity]);
 
     const handleInputChange = (e) => {
@@ -344,11 +346,11 @@ const CrackersCartTable = ({
 
     // Check for name match
     const matchesName = product.name.toLowerCase().includes(nameQuery) ||
-                        (product.productDescription && product.productDescription.toLowerCase().includes(nameQuery));
-    
+      (product.productDescription && product.productDescription.toLowerCase().includes(nameQuery));
+
     // Check for S.No match (only if a number is entered)
     const matchesSno = snoQuery === "" || (index + 1).toString().includes(snoQuery);
-    
+
     return matchesName && matchesSno;
   });
 
@@ -374,7 +376,7 @@ const CrackersCartTable = ({
     <div className="w-full rounded-2xl shadow-2xl overflow-hidden border border-white/20">
       {/* Search Bars Container */}
       <div className="p-4 md:p-6  from-purple-900/80 via-indigo-900/80 to-blue-900/80 flex flex-col md:flex-row gap-4">
-        
+
         {/* Search by S.No */}
         <div className="relative w-full md:w-1/2">
           <input
@@ -438,7 +440,7 @@ const CrackersCartTable = ({
               </div>
             </React.Fragment>
           ));
-          
+
           if (productRows.length === 0) {
             return (
               <div className="text-center text-gray-400 py-8">
