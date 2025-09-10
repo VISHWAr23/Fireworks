@@ -63,9 +63,18 @@ export default async function generateBill(products, phone, email, billDiscount 
  );
 
  // Calculate discounted total
- const discountedTotal = billDiscount > 0
-  ? grandTotal * (1 - billDiscount / 100)
-  : grandTotal;
+ const discountedTotal = (() => {
+  // Separate GIFT BOXES and other products
+  const giftBoxTotal = products
+    .filter(p => (p.productType || p.type || "").toUpperCase() === "GIFT BOXES")
+    .reduce(
+      (acc, p) => acc + Number(p.actualPrice ?? 0) * (p.selectedQuantity || p.quantity || p.qty || p.defaultQuantity || 1),
+      0
+    );
+  const otherTotal = grandTotal - giftBoxTotal;
+  // Apply discount only to non-GIFT BOXES products
+  return giftBoxTotal + (otherTotal * (billDiscount > 0 ? (1 - billDiscount / 100) : 1));
+})();
 
  // AUTOTABLE
  autoTable(doc, {
@@ -102,18 +111,16 @@ export default async function generateBill(products, phone, email, billDiscount 
 
  // GRAND TOTAL & DISCOUNT
  const finalY = doc.lastAutoTable.finalY || 140 + tableBody.length * 20;
-
- // Right-aligned text - this is the key change
  const pageWidth = doc.internal.pageSize.getWidth();
- const margin = 55; // Use the same margin as the left side
- 
+ const margin = 55;
+
  doc.setFont("helvetica", "bold");
  doc.setFontSize(14);
  doc.text(`Grand Total: ${grandTotal.toFixed(2)} INR`, pageWidth - margin, finalY + 40, { align: 'right' });
 
  if (billDiscount > 0) {
   doc.setFontSize(13);
-  doc.text(`Discount Applied: ${billDiscount}%`, pageWidth - margin, finalY + 65, { align: 'right' });
+  doc.text(`Discount Applied: ${billDiscount}% (Not applied for GIFT BOXES)`, pageWidth - margin, finalY + 65, { align: 'right' });
   doc.setFontSize(14);
   doc.text(`Discounted Total: ${discountedTotal.toFixed(2)} INR`, pageWidth - margin, finalY + 90, { align: 'right' });
  }

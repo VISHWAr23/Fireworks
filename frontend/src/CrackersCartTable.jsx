@@ -189,7 +189,12 @@ const CrackersCartTable = ({
 
   const SectionHeader = ({ title }) => (
     <div className="w-full bg-gradient-to-r from-pink-600 via-red-500 to-orange-500 text-white py-4 px-6 mb-2 rounded-lg shadow-lg border border-white/20">
-      <h3 className="text-lg font-bold tracking-wide">{title}</h3>
+      <h3 className="text-lg font-bold tracking-wide">
+        {title}
+        {title === 'GIFT BOXES' && (
+          <span className="ml-2 text-sm font-normal">(Discount not applied)</span>
+        )}
+      </h3>
     </div>
   );
 
@@ -298,11 +303,6 @@ const CrackersCartTable = ({
               </div>
             </div>
             <div className="col-span-3 text-center">
-              <div className="flex flex-col items-center space-y-0.5">
-                <div className="text-green-400 font-bold text-sm">
-                  ₹{price.toFixed(2)}
-                </div>
-              </div>
             </div>
             <div className="col-span-2 flex justify-center items-center">
               <div className="flex flex-col items-center space-y-1">
