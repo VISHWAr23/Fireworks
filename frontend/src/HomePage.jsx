@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { createPortal } from "react-dom";
 import CrackersCartTable from "./CrackersCartTable.jsx";
 import Footer from "./Footer.jsx";
@@ -49,24 +49,36 @@ export default function HomePage() {
     };
   }, []);
 
-  const updateQuantity = (id, change) => {
-    setQuantities((prev) => ({
-      ...prev,
-      [id]: Math.max(0, (prev[id] || 0) + change),
-    }));
-  };
+  const updateQuantity = useCallback((id, change) => {
+    setQuantities((prev) => {
+      const current = prev[id] || 0;
+      const next = Math.max(0, current + change);
+      if (current === next) return prev;
+      return {
+        ...prev,
+        [id]: next,
+      };
+    });
+  }, []);
 
-  const setQuantityForId = (id, value) => {
-    setQuantities((prev) => ({
-      ...prev,
-      [id]: Math.max(0, value),
-    }));
-  };
+  const setQuantityForId = useCallback((id, value) => {
+    setQuantities((prev) => {
+      const current = prev[id] || 0;
+      const next = Math.max(0, value);
+      if (current === next) return prev;
+      return {
+        ...prev,
+        [id]: next,
+      };
+    });
+  }, []);
 
-  const getTotalItems = () =>
-    Object.values(quantities).reduce((sum, qty) => sum + qty, 0);
+  const totalItems = useMemo(
+    () => Object.values(quantities).reduce((sum, qty) => sum + qty, 0),
+    [quantities]
+  );
 
-  const calculateGrandTotal = () => {
+  const grandTotal = useMemo(() => {
     return products
       .reduce((total, item) => {
         const quantity = quantities[item._id] || 0;
@@ -74,16 +86,16 @@ export default function HomePage() {
         return total + price * quantity;
       }, 0)
       .toFixed(2);
-  };
+  }, [products, quantities]);
 
-  // NEW: Handler for the floating cart button click
-  const handleCartButtonClick = () => {
-    if (getTotalItems() > 0) {
+  // Handler for the floating cart button click
+  const handleCartButtonClick = useCallback(() => {
+    if (totalItems > 0) {
       setShowModal(true);
     } else {
       setShowEmptyCartModal(true);
     }
-  };
+  }, [totalItems]);
 
   // Logo interaction handlers (unchanged)
   const handleLogoInteraction = () => {
@@ -162,18 +174,18 @@ export default function HomePage() {
           >
             <div className="relative">
               <ShoppingCart size={28} className="text-white" />
-              {getTotalItems() > 0 && (
+              {totalItems > 0 && (
                 <div className="absolute -top-2.5 -right-2.5 bg-red-500 text-white text-[11px] font-black rounded-full h-5 w-5 flex items-center justify-center border-2 border-white shadow-lg animate-bounce">
-                  {getTotalItems() > 999 ? "999+" : getTotalItems()}
+                  {totalItems > 999 ? "999+" : totalItems}
                 </div>
               )}
             </div>
             <div>
               <div className="text-[10px] text-pink-200 uppercase tracking-wider font-semibold">
-                {getTotalItems()} {getTotalItems() === 1 ? 'item' : 'items'} in cart
+                {totalItems} {totalItems === 1 ? 'item' : 'items'} in cart
               </div>
               <div className="font-extrabold text-xl bg-clip-text text-transparent bg-gradient-to-r from-yellow-300 via-pink-200 to-white">
-                ₹ {calculateGrandTotal()}
+                ₹ {grandTotal}
               </div>
             </div>
           </div>
@@ -186,18 +198,18 @@ export default function HomePage() {
             <div className="flex items-center gap-3">
               <div className="relative">
                 <ShoppingCart size={24} className="text-white" />
-                {getTotalItems() > 0 && (
+                {totalItems > 0 && (
                   <div className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-black rounded-full h-4 w-4 flex items-center justify-center border border-white shadow">
-                    {getTotalItems() > 99 ? "99+" : getTotalItems()}
+                    {totalItems > 99 ? "99+" : totalItems}
                   </div>
                 )}
               </div>
               <div>
                 <span className="text-xs font-semibold text-pink-200 block leading-tight">
-                  {getTotalItems()} {getTotalItems() === 1 ? 'item' : 'items'}
+                  {totalItems} {totalItems === 1 ? 'item' : 'items'}
                 </span>
                 <span className="text-base font-extrabold text-white">
-                  ₹ {calculateGrandTotal()}
+                  ₹ {grandTotal}
                 </span>
               </div>
             </div>

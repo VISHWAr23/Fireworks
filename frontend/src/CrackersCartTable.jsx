@@ -21,6 +21,281 @@ const getStoredCategories = () => {
   return CANONICAL_CATEGORIES;
 };
 
+// Pure utility for price calculation
+const calculateTotal = (price, quantity) => (price * quantity).toFixed(2);
+
+// Memoized Section Header Component (hoisted to prevent remounting)
+const SectionHeader = React.memo(({ title, count, sequence }) => {
+  return (
+    <div
+      id={`cat-sec-${title.replace(/[^a-zA-Z0-9]/g, '-')}`}
+      className="w-full bg-gradient-to-r from-pink-600 via-red-500 to-orange-500 text-white py-3 px-3 sm:py-4 sm:px-6 mb-3 rounded-xl shadow-lg border border-white/20 flex items-center justify-between transition-all duration-300"
+    >
+      <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+        {sequence && (
+          <span className="flex-shrink-0 bg-black/30 text-yellow-300 text-xs sm:text-sm font-black px-2.5 py-1 rounded-md border border-yellow-400/30">
+            #{sequence}
+          </span>
+        )}
+        <h3 className="text-sm sm:text-base md:text-lg font-extrabold tracking-wide uppercase truncate">
+          {title}
+        </h3>
+      </div>
+      <div className="flex items-center gap-2 flex-shrink-0">
+        <span className="bg-white/20 text-white text-xs font-semibold px-2.5 py-1 rounded-full border border-white/30">
+          {count} {count === 1 ? 'item' : 'items'}
+        </span>
+      </div>
+    </div>
+  );
+});
+
+// Highly-optimized Memoized Product Row Component (only re-renders if this specific item's quantity changes)
+const ProductRow = React.memo(({ item, quantity, onIncrement, onDecrement, onSetQuantity }) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [inputValue, setInputValue] = useState(quantity > 0 ? quantity.toString() : "");
+  const isSelected = quantity > 0;
+  const price = item.actualPrice;
+
+  // Use local state while typing, but directly reflect prop when not actively focused
+  const displayVal = isEditing ? inputValue : (quantity > 0 ? quantity.toString() : "");
+
+  const handleFocus = () => {
+    setIsEditing(true);
+    setInputValue(quantity > 0 ? quantity.toString() : "");
+  };
+
+  const handleInputChange = (e) => {
+    const value = e.target.value;
+    if (value === "" || /^\d+$/.test(value)) {
+      setInputValue(value);
+    }
+  };
+
+  const handleInputBlur = () => {
+    setIsEditing(false);
+    const num = parseInt(inputValue, 10);
+    const validNum = isNaN(num) ? 0 : num;
+    if (validNum !== quantity) {
+      onSetQuantity(item._id, validNum);
+    }
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter") {
+      e.target.blur();
+    }
+  };
+
+  const handleMinusClick = () => {
+    onDecrement(item._id);
+  };
+
+  const handlePlusClick = () => {
+    onIncrement(item._id);
+  };
+
+  return (
+    <div
+      className={`product-row transition-colors duration-150 rounded-xl mb-2.5 border ${
+        isSelected
+          ? "bg-gradient-to-r from-purple-900/70 via-indigo-900/70 to-pink-900/50 border-pink-500/50 shadow-lg shadow-purple-950/40"
+          : "bg-gradient-to-r from-purple-950/50 via-indigo-950/50 to-blue-950/50 border-white/10 hover:border-white/20 hover:bg-purple-900/30"
+      }`}
+    >
+      {/* ================= DESKTOP VIEW (md and up) ================= */}
+      <div className="hidden md:grid md:grid-cols-12 gap-3 items-center px-4 py-3">
+        {/* No. */}
+        <div className="col-span-1 flex justify-center">
+          <div
+            className={`text-sm font-bold rounded-full w-9 h-9 flex items-center justify-center transition-all ${
+              isSelected
+                ? "bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-md shadow-pink-500/40 scale-105"
+                : "text-gray-300 bg-white/10 border border-white/15"
+            }`}
+          >
+            {item.displayIndex}
+          </div>
+        </div>
+
+        {/* Product Name & Description */}
+        <div className="col-span-5 text-left pl-2">
+          <div className="text-white font-semibold text-base leading-tight break-words flex items-center gap-2">
+            <span>{item.name}</span>
+            {isSelected && (
+              <span className="bg-pink-500/20 text-pink-300 border border-pink-500/40 text-[10px] font-bold px-1.5 py-0.5 rounded">
+                Added
+              </span>
+            )}
+          </div>
+          <div className="text-gray-300 text-xs leading-relaxed mt-1 flex items-center gap-2 flex-wrap">
+            {item.productDescription && (
+              <span className="bg-white/10 px-2 py-0.5 rounded text-gray-200 font-medium">
+                {item.productDescription}
+              </span>
+            )}
+            {item.tamilName && (
+              <span className="text-yellow-300/90 text-xs">
+                {item.tamilName}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Price */}
+        <div className="col-span-2 text-center">
+          <div className="text-emerald-400 font-extrabold text-lg">
+            ₹{price.toFixed(2)}
+          </div>
+        </div>
+
+        {/* Quantity Stepper */}
+        <div className="col-span-2 flex justify-center items-center gap-1.5">
+          <button
+            type="button"
+            onClick={handleMinusClick}
+            disabled={quantity === 0}
+            className={`w-9 h-9 rounded-lg flex items-center justify-center font-bold shadow-md transition-all duration-150 active:scale-95 ${
+              quantity > 0
+                ? "bg-gradient-to-r from-pink-500 to-red-500 hover:from-pink-600 hover:to-red-600 text-white cursor-pointer"
+                : "bg-white/10 text-gray-500 cursor-not-allowed"
+            }`}
+            title="Decrease quantity"
+          >
+            <Minus size={15} />
+          </button>
+          <input
+            type="text"
+            inputMode="numeric"
+            value={displayVal}
+            onFocus={handleFocus}
+            onChange={handleInputChange}
+            onBlur={handleInputBlur}
+            onKeyDown={handleKeyDown}
+            className="bg-black/40 text-white font-bold text-base w-12 py-1 text-center rounded-lg border border-white/20 focus:outline-none focus:ring-2 focus:ring-pink-500 transition-all"
+            placeholder="0"
+          />
+          <button
+            type="button"
+            onClick={handlePlusClick}
+            className="w-9 h-9 rounded-lg bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white flex items-center justify-center font-bold shadow-md transition-all duration-150 active:scale-95 cursor-pointer"
+            title="Increase quantity"
+          >
+            <Plus size={15} />
+          </button>
+        </div>
+
+        {/* Total Amount */}
+        <div className="col-span-2 text-center">
+          <div
+            className={`font-black text-lg transition-all ${
+              isSelected
+                ? "text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-pink-400 to-purple-300 scale-105"
+                : "text-gray-400 font-semibold"
+            }`}
+          >
+            ₹{calculateTotal(price, quantity)}
+          </div>
+        </div>
+      </div>
+
+      {/* ================= MOBILE VIEW (< md) ================= */}
+      <div className="md:hidden p-3">
+        {/* Top Row: S.No badge, Name, Package */}
+        <div className="flex items-start justify-between gap-2 mb-2.5">
+          <div className="flex items-start gap-2 min-w-0 flex-1">
+            <span
+              className={`flex-shrink-0 text-xs font-bold w-6 h-6 rounded-md flex items-center justify-center mt-0.5 ${
+                isSelected
+                  ? "bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-sm"
+                  : "bg-white/15 text-gray-300 border border-white/10"
+              }`}
+            >
+              {item.displayIndex}
+            </span>
+            <div className="min-w-0 flex-1">
+              <h4 className="text-white font-bold text-sm leading-snug break-words">
+                {item.name}
+              </h4>
+              <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
+                {item.productDescription && (
+                  <span className="text-[11px] text-gray-300 font-medium bg-white/10 px-1.5 py-0.2 rounded">
+                    {item.productDescription}
+                  </span>
+                )}
+                {item.tamilName && (
+                  <span className="text-[11px] text-yellow-300/80">
+                    {item.tamilName}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Total on top right if selected */}
+          {isSelected && (
+            <div className="text-right flex-shrink-0">
+              <span className="text-xs text-gray-400 block font-normal">Total</span>
+              <span className="text-sm font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-pink-400">
+                ₹{calculateTotal(price, quantity)}
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* Bottom Row: Unit Price & Horizontal Stepper */}
+        <div className="flex items-center justify-between pt-2 border-t border-white/10 mt-1">
+          {/* Unit Price */}
+          <div className="flex items-baseline gap-1">
+            <span className="text-xs text-gray-400">Price:</span>
+            <span className="text-emerald-400 font-extrabold text-base">
+              ₹{price.toFixed(2)}
+            </span>
+          </div>
+
+          {/* Accessible Touch-Friendly Stepper */}
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleMinusClick}
+              disabled={quantity === 0}
+              className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center font-bold transition-all duration-150 active:scale-95 ${
+                quantity > 0
+                  ? "bg-gradient-to-r from-pink-500 to-red-500 text-white shadow-md cursor-pointer"
+                  : "bg-white/10 text-gray-500 cursor-not-allowed"
+              }`}
+              aria-label="Decrease quantity"
+            >
+              <Minus size={16} />
+            </button>
+
+            <input
+              type="text"
+              inputMode="numeric"
+              value={displayVal}
+              onFocus={handleFocus}
+              onChange={handleInputChange}
+              onBlur={handleInputBlur}
+              onKeyDown={handleKeyDown}
+              className="w-12 h-9 sm:h-10 bg-black/40 text-white font-black text-sm sm:text-base text-center rounded-xl border border-white/20 focus:outline-none focus:ring-2 focus:ring-pink-500 transition-all"
+              placeholder="0"
+            />
+
+            <button
+              type="button"
+              onClick={handlePlusClick}
+              className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-r from-green-500 to-emerald-500 text-white flex items-center justify-center font-bold shadow-md transition-all duration-150 active:scale-95 cursor-pointer"
+              aria-label="Increase quantity"
+            >
+              <Plus size={16} />
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+});
+
 const CrackersCartTable = ({
   products,
   quantities,
@@ -209,31 +484,39 @@ const CrackersCartTable = ({
     return result;
   }, [orderedCategories, categorizedProducts, searchQueryByName, searchQueryBySno, activeCategoryFilter]);
 
-  const calculateTotal = (price, quantity) => {
-    return (price * quantity).toFixed(2);
-  };
+  const handleIncrement = useCallback((id) => {
+    updateQuantity(id, 1);
+  }, [updateQuantity]);
 
-  const getTotalItems = () => {
+  const handleDecrement = useCallback((id) => {
+    updateQuantity(id, -1);
+  }, [updateQuantity]);
+
+  const handleSetQuantity = useCallback((id, val) => {
+    setQuantityForId(id, val);
+  }, [setQuantityForId]);
+
+  const totalItemCount = useMemo(() => {
     return Object.values(quantities).reduce((sum, qty) => sum + qty, 0);
-  };
+  }, [quantities]);
 
-  const calculateGrandTotal = () => {
+  const grandTotal = useMemo(() => {
     return products
       .reduce((total, item) => {
         const quantity = quantities[item._id] || 0;
         return total + item.actualPrice * quantity;
       }, 0)
       .toFixed(2);
-  };
+  }, [products, quantities]);
 
-  const getDiscountedTotal = () => {
-    const total = parseFloat(calculateGrandTotal());
+  const discountedTotal = useMemo(() => {
+    const total = parseFloat(grandTotal);
     return (total * (cartDiscount > 0 ? (1 - cartDiscount / 100) : 1)).toFixed(2);
-  };
+  }, [grandTotal, cartDiscount]);
 
-  const getSelectedItems = () => {
-    return products.filter((item) => quantities[item._id] > 0);
-  };
+  const selectedItems = useMemo(() => {
+    return products.filter((item) => (quantities[item._id] || 0) > 0);
+  }, [products, quantities]);
 
   const handleGenerateBill = async (e) => {
     e.preventDefault();
@@ -243,7 +526,7 @@ const CrackersCartTable = ({
     }
     setPhoneError("");
 
-    const selected = getSelectedItems();
+    const selected = selectedItems;
     if (selected.length === 0) {
       alert("Please select at least one item to generate the bill.");
       return;
@@ -349,256 +632,8 @@ const CrackersCartTable = ({
     }
   };
 
-  // Section Header Component
-  const SectionHeader = ({ title, count, sequence }) => {
-    return (
-      <div
-        id={`cat-sec-${title.replace(/[^a-zA-Z0-9]/g, '-')}`}
-        className="w-full bg-gradient-to-r from-pink-600 via-red-500 to-orange-500 text-white py-3 px-3 sm:py-4 sm:px-6 mb-3 rounded-xl shadow-lg border border-white/20 flex items-center justify-between transition-all duration-300"
-      >
-        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-          {sequence && (
-            <span className="flex-shrink-0 bg-black/30 backdrop-blur-sm text-yellow-300 text-xs sm:text-sm font-black px-2.5 py-1 rounded-md border border-yellow-400/30">
-              #{sequence}
-            </span>
-          )}
-          <h3 className="text-sm sm:text-base md:text-lg font-extrabold tracking-wide uppercase truncate">
-            {title}
-          </h3>
-        </div>
-        <div className="flex items-center gap-2 flex-shrink-0">
-          <span className="bg-white/20 text-white text-xs font-semibold px-2.5 py-1 rounded-full border border-white/30 backdrop-blur-sm">
-            {count} {count === 1 ? 'item' : 'items'}
-          </span>
-        </div>
-      </div>
-    );
-  };
-
-  // Product Row Component (Responsive with Desktop & Mobile View)
-  const ProductRow = ({ item }) => {
-    const quantity = quantities[item._id] || 0;
-    const price = item.actualPrice;
-    const [inputValue, setInputValue] = useState(quantity.toString());
-    const isSelected = quantity > 0;
-
-    useEffect(() => {
-      setInputValue(quantity.toString());
-    }, [quantity]);
-
-    const handleInputChange = (e) => {
-      const value = e.target.value;
-      if (value === "" || /^\d+$/.test(value)) {
-        setInputValue(value);
-      }
-    };
-
-    const handleInputBlur = () => {
-      const num = parseInt(inputValue, 10);
-      setQuantityForId(item._id, isNaN(num) ? 0 : num);
-      setInputValue(isNaN(num) ? "0" : num.toString());
-    };
-
-    const handleDecrement = () => {
-      const num = Math.max(0, quantity - 1);
-      setQuantityForId(item._id, num);
-    };
-
-    const handleIncrement = () => {
-      const num = quantity + 1;
-      setQuantityForId(item._id, num);
-    };
-
-    return (
-      <div
-        className={`transition-all duration-200 rounded-xl mb-2.5 border backdrop-blur-sm ${
-          isSelected
-            ? "bg-gradient-to-r from-purple-900/60 via-indigo-900/60 to-pink-900/40 border-pink-500/50 shadow-lg shadow-purple-950/40"
-            : "bg-gradient-to-r from-purple-950/40 via-indigo-950/40 to-blue-950/40 border-white/10 hover:border-white/20 hover:bg-purple-900/30"
-        }`}
-      >
-        {/* ================= DESKTOP VIEW (md and up) ================= */}
-        <div className="hidden md:grid md:grid-cols-12 gap-3 items-center px-4 py-3">
-          {/* No. */}
-          <div className="col-span-1 flex justify-center">
-            <div
-              className={`text-sm font-bold rounded-full w-9 h-9 flex items-center justify-center transition-all ${
-                isSelected
-                  ? "bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-md shadow-pink-500/40 scale-105"
-                  : "text-gray-300 bg-white/10 border border-white/15"
-              }`}
-            >
-              {item.displayIndex}
-            </div>
-          </div>
-
-          {/* Product Name & Description */}
-          <div className="col-span-5 text-left pl-2">
-            <div className="text-white font-semibold text-base leading-tight break-words flex items-center gap-2">
-              <span>{item.name}</span>
-              {isSelected && (
-                <span className="bg-pink-500/20 text-pink-300 border border-pink-500/40 text-[10px] font-bold px-1.5 py-0.5 rounded">
-                  Added
-                </span>
-              )}
-            </div>
-            <div className="text-gray-300 text-xs leading-relaxed mt-1 flex items-center gap-2 flex-wrap">
-              {item.productDescription && (
-                <span className="bg-white/10 px-2 py-0.5 rounded text-gray-200 font-medium">
-                  {item.productDescription}
-                </span>
-              )}
-              {item.tamilName && (
-                <span className="text-yellow-300/90 text-xs">
-                  {item.tamilName}
-                </span>
-              )}
-            </div>
-          </div>
-
-          {/* Price */}
-          <div className="col-span-2 text-center">
-            <div className="text-emerald-400 font-extrabold text-lg">
-              ₹{price.toFixed(2)}
-            </div>
-          </div>
-
-          {/* Quantity Stepper */}
-          <div className="col-span-2 flex justify-center items-center gap-1.5">
-            <button
-              onClick={handleDecrement}
-              disabled={quantity === 0}
-              className={`w-9 h-9 rounded-lg flex items-center justify-center font-bold shadow-md transition-all duration-200 active:scale-95 ${
-                quantity > 0
-                  ? "bg-gradient-to-r from-pink-500 to-red-500 hover:from-pink-600 hover:to-red-600 text-white cursor-pointer"
-                  : "bg-white/10 text-gray-500 cursor-not-allowed"
-              }`}
-              title="Decrease quantity"
-            >
-              <Minus size={15} />
-            </button>
-            <input
-              type="text"
-              value={inputValue}
-              onChange={handleInputChange}
-              onBlur={handleInputBlur}
-              className="bg-black/40 text-white font-bold text-base w-12 py-1 text-center rounded-lg border border-white/20 focus:outline-none focus:ring-2 focus:ring-pink-500"
-              placeholder="0"
-            />
-            <button
-              onClick={handleIncrement}
-              className="w-9 h-9 rounded-lg bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white flex items-center justify-center font-bold shadow-md transition-all duration-200 active:scale-95 cursor-pointer"
-              title="Increase quantity"
-            >
-              <Plus size={15} />
-            </button>
-          </div>
-
-          {/* Total Amount */}
-          <div className="col-span-2 text-center">
-            <div
-              className={`font-black text-lg transition-all ${
-                isSelected
-                  ? "text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-pink-400 to-purple-300 scale-105"
-                  : "text-gray-400 font-semibold"
-              }`}
-            >
-              ₹{calculateTotal(price, quantity)}
-            </div>
-          </div>
-        </div>
-
-        {/* ================= MOBILE VIEW (< md) ================= */}
-        <div className="md:hidden p-3">
-          {/* Top Row: S.No badge, Name, Package */}
-          <div className="flex items-start justify-between gap-2 mb-2.5">
-            <div className="flex items-start gap-2 min-w-0 flex-1">
-              <span
-                className={`flex-shrink-0 text-xs font-bold w-6 h-6 rounded-md flex items-center justify-center mt-0.5 ${
-                  isSelected
-                    ? "bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-sm"
-                    : "bg-white/15 text-gray-300 border border-white/10"
-                }`}
-              >
-                {item.displayIndex}
-              </span>
-              <div className="min-w-0 flex-1">
-                <h4 className="text-white font-bold text-sm leading-snug break-words">
-                  {item.name}
-                </h4>
-                <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
-                  {item.productDescription && (
-                    <span className="text-[11px] text-gray-300 font-medium bg-white/10 px-1.5 py-0.2 rounded">
-                      {item.productDescription}
-                    </span>
-                  )}
-                  {item.tamilName && (
-                    <span className="text-[11px] text-yellow-300/80">
-                      {item.tamilName}
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Total on top right if selected */}
-            {isSelected && (
-              <div className="text-right flex-shrink-0">
-                <span className="text-xs text-gray-400 block font-normal">Total</span>
-                <span className="text-sm font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-pink-400">
-                  ₹{calculateTotal(price, quantity)}
-                </span>
-              </div>
-            )}
-          </div>
-
-          {/* Bottom Row: Unit Price & Horizontal Stepper */}
-          <div className="flex items-center justify-between pt-2 border-t border-white/10 mt-1">
-            {/* Unit Price */}
-            <div className="flex items-baseline gap-1">
-              <span className="text-xs text-gray-400">Price:</span>
-              <span className="text-emerald-400 font-extrabold text-base">
-                ₹{price.toFixed(2)}
-              </span>
-            </div>
-
-            {/* Accessible Touch-Friendly Stepper */}
-            <div className="flex items-center gap-2">
-              <button
-                onClick={handleDecrement}
-                disabled={quantity === 0}
-                className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center font-bold transition-all duration-150 active:scale-95 ${
-                  quantity > 0
-                    ? "bg-gradient-to-r from-pink-500 to-red-500 text-white shadow-md cursor-pointer"
-                    : "bg-white/10 text-gray-500 cursor-not-allowed"
-                }`}
-                aria-label="Decrease quantity"
-              >
-                <Minus size={16} />
-              </button>
-
-              <input
-                type="text"
-                value={inputValue}
-                onChange={handleInputChange}
-                onBlur={handleInputBlur}
-                className="w-12 h-9 sm:h-10 bg-black/40 text-white font-black text-sm sm:text-base text-center rounded-xl border border-white/20 focus:outline-none focus:ring-2 focus:ring-pink-500"
-                placeholder="0"
-              />
-
-              <button
-                onClick={handleIncrement}
-                className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-r from-green-500 to-emerald-500 text-white flex items-center justify-center font-bold shadow-md transition-all duration-150 active:scale-95 cursor-pointer"
-                aria-label="Increase quantity"
-              >
-                <Plus size={16} />
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
+  // Section Header and ProductRow have been hoisted outside CrackersCartTable
+  // and wrapped in React.memo for high-speed rendering.
 
   if (isLoading) {
     return (
@@ -783,7 +818,14 @@ const CrackersCartTable = ({
                 />
                 <div className="space-y-1.5 sm:space-y-2">
                   {items.map((item) => (
-                    <ProductRow key={item._id || item.id || item.computedSiNo} item={item} />
+                    <ProductRow
+                      key={item._id || item.id || item.computedSiNo}
+                      item={item}
+                      quantity={quantities[item._id] || 0}
+                      onIncrement={handleIncrement}
+                      onDecrement={handleDecrement}
+                      onSetQuantity={handleSetQuantity}
+                    />
                   ))}
                 </div>
               </div>
@@ -814,7 +856,7 @@ const CrackersCartTable = ({
                     Order Summary & Bill
                   </h2>
                   <p className="text-[11px] text-pink-300 font-medium">
-                    {getSelectedItems().length} {getSelectedItems().length === 1 ? "item" : "items"} • {getTotalItems()} total qty
+                    {selectedItems.length} {selectedItems.length === 1 ? "item" : "items"} • {totalItemCount} total qty
                   </p>
                 </div>
               </div>
@@ -839,16 +881,16 @@ const CrackersCartTable = ({
                       Items in Cart
                     </h3>
                     <span className="text-xs text-yellow-300 font-semibold">
-                      ₹{calculateGrandTotal()} Subtotal
+                      ₹{grandTotal} Subtotal
                     </span>
                   </div>
                   <div className="max-h-36 sm:max-h-44 overflow-y-auto bg-black/40 rounded-xl p-2 border border-white/10 space-y-1.5 custom-scrollbar">
-                    {getSelectedItems().length === 0 ? (
+                    {selectedItems.length === 0 ? (
                       <div className="text-center text-gray-400 py-4 text-xs">
                         No items selected
                       </div>
                     ) : (
-                      getSelectedItems().map((item) => {
+                      selectedItems.map((item) => {
                         const qty = quantities[item._id] || 0;
                         const pr = item.actualPrice;
                         const tot = calculateTotal(pr, qty);
@@ -882,7 +924,7 @@ const CrackersCartTable = ({
                 <div className="bg-white/5 rounded-xl p-3 border border-white/10 space-y-2">
                   <div className="flex justify-between text-gray-300 text-xs">
                     <span>Subtotal</span>
-                    <span className="font-bold text-white">₹{calculateGrandTotal()}</span>
+                    <span className="font-bold text-white">₹{grandTotal}</span>
                   </div>
 
                   {/* Discount */}
@@ -987,14 +1029,14 @@ const CrackersCartTable = ({
                     Grand Total:
                   </span>
                   <span className="text-emerald-400 font-black text-xl sm:text-2xl">
-                    ₹{discountApplied ? getDiscountedTotal() : calculateGrandTotal()}
+                    ₹{discountApplied ? discountedTotal : grandTotal}
                   </span>
                 </div>
 
                 <button
                   type="submit"
                   className="w-full bg-gradient-to-r from-pink-500 via-purple-600 to-indigo-600 hover:from-pink-600 hover:to-indigo-700 text-white font-black py-3 sm:py-3.5 px-4 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-xl hover:shadow-pink-500/25 active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base cursor-pointer"
-                  disabled={loading || getSelectedItems().length === 0}
+                  disabled={loading || selectedItems.length === 0}
                 >
                   {loading ? (
                     <>

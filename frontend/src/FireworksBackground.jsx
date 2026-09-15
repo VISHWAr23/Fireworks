@@ -65,35 +65,32 @@ export default function FireworksBackground() {
 
       explode() {
         this.exploded = true;
-        // Big cracker explosion: 85 to 140 shimmering sparks
-        const particleCount = 85 + Math.floor(Math.random() * 55);
+        // Big cracker explosion: 45 to 70 shimmering sparks (balanced for 60-120fps performance)
+        const particleCount = 45 + Math.floor(Math.random() * 25);
 
         for (let i = 0; i < particleCount; i++) {
           particles.push(new Particle(this.x, this.y, this.palette));
         }
 
         // Shockwave expansion ring
-        for (let i = 0; i < 28; i++) {
+        for (let i = 0; i < 14; i++) {
           particles.push(new ShockwaveSpark(this.x, this.y, this.palette[0]));
         }
       }
 
       draw() {
         ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
         for (let i = 0; i < this.trail.length; i++) {
           const pt = this.trail[i];
           ctx.beginPath();
           ctx.arc(pt.x, pt.y, this.size * (i / this.trail.length), 0, Math.PI * 2);
           ctx.fillStyle = `rgba(255, 210, 100, ${Math.max(0, pt.alpha)})`;
-          ctx.shadowColor = '#ffaa00';
-          ctx.shadowBlur = 10;
           ctx.fill();
         }
         ctx.beginPath();
         ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
         ctx.fillStyle = '#ffffff';
-        ctx.shadowColor = '#ffffff';
-        ctx.shadowBlur = 14;
         ctx.fill();
         ctx.restore();
       }
@@ -106,15 +103,15 @@ export default function FireworksBackground() {
         this.palette = palette;
         this.color = palette[Math.floor(Math.random() * palette.length)];
         const angle = Math.random() * Math.PI * 2;
-        const speed = 2 + Math.random() * 10;
+        const speed = 2 + Math.random() * 9;
 
         this.vx = Math.cos(angle) * speed;
         this.vy = Math.sin(angle) * speed;
         this.friction = 0.955;
         this.gravity = 0.12;
         this.alpha = 1;
-        this.decay = 0.01 + Math.random() * 0.014;
-        this.size = 2.5 + Math.random() * 3.5;
+        this.decay = 0.012 + Math.random() * 0.015;
+        this.size = 2 + Math.random() * 3;
         this.flicker = Math.random() > 0.4;
       }
 
@@ -131,12 +128,11 @@ export default function FireworksBackground() {
       draw() {
         if (this.alpha <= 0) return;
         ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
         ctx.globalAlpha = this.flicker && Math.random() > 0.35 ? this.alpha * 0.6 : this.alpha;
         ctx.beginPath();
         ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
         ctx.fillStyle = this.color;
-        ctx.shadowColor = this.color;
-        ctx.shadowBlur = 12;
         ctx.fill();
         ctx.restore();
       }
@@ -148,12 +144,12 @@ export default function FireworksBackground() {
         this.y = y;
         this.color = color;
         const angle = Math.random() * Math.PI * 2;
-        const speed = 8 + Math.random() * 6;
+        const speed = 7 + Math.random() * 5;
         this.vx = Math.cos(angle) * speed;
         this.vy = Math.sin(angle) * speed;
         this.alpha = 1;
-        this.decay = 0.026;
-        this.size = 2.2;
+        this.decay = 0.028;
+        this.size = 2;
       }
       update() {
         this.x += this.vx;
@@ -165,12 +161,11 @@ export default function FireworksBackground() {
       draw() {
         if (this.alpha <= 0) return;
         ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
         ctx.globalAlpha = this.alpha;
         ctx.beginPath();
         ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
         ctx.fillStyle = this.color;
-        ctx.shadowColor = '#ffffff';
-        ctx.shadowBlur = 16;
         ctx.fill();
         ctx.restore();
       }
@@ -178,11 +173,11 @@ export default function FireworksBackground() {
 
     const launchInstantBlast = (targetX, targetY) => {
       const palette = colorPalettes[Math.floor(Math.random() * colorPalettes.length)];
-      const count = 90 + Math.floor(Math.random() * 50);
+      const count = 40 + Math.floor(Math.random() * 25);
       for (let i = 0; i < count; i++) {
         particles.push(new Particle(targetX, targetY, palette));
       }
-      for (let i = 0; i < 24; i++) {
+      for (let i = 0; i < 14; i++) {
         particles.push(new ShockwaveSpark(targetX, targetY, palette[0]));
       }
     };
@@ -196,14 +191,17 @@ export default function FireworksBackground() {
     let lastLaunch = 0;
 
     const animate = (timestamp) => {
+      if (document.hidden) {
+        animationFrameId = requestAnimationFrame(animate);
+        return;
+      }
+
       ctx.clearRect(0, 0, width, height);
 
-      if (timestamp - lastLaunch > 750 + Math.random() * 650) {
-        fireworks.push(new Rocket());
-        if (Math.random() > 0.45) {
-          setTimeout(() => {
-            fireworks.push(new Rocket());
-          }, 200);
+      if (timestamp - lastLaunch > 850 + Math.random() * 700) {
+        // Cap active rockets to avoid particle buildup
+        if (fireworks.length < 3) {
+          fireworks.push(new Rocket());
         }
         lastLaunch = timestamp;
       }
@@ -215,6 +213,11 @@ export default function FireworksBackground() {
         if (fw.exploded) {
           fireworks.splice(i, 1);
         }
+      }
+
+      // Hard limit on particles for smooth 60fps on lower-end devices
+      if (particles.length > 250) {
+        particles.splice(0, particles.length - 250);
       }
 
       for (let i = particles.length - 1; i >= 0; i--) {

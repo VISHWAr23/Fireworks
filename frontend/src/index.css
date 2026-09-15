@@ -88,3 +88,9 @@ body {
 img {
   content-visibility: auto;
 }
+
+/* Fast list rendering - skips off-screen paint work */
+.product-row {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 65px;
+}
